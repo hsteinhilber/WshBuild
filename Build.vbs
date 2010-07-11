@@ -11,16 +11,25 @@ Public Sub Build()
 	WScript.Echo "Building all application files..."
 End Sub
 
-Public Sub AnotherTask()
+Public Sub ListAllFiles()
 	Depends("Clean")
 	
-	WScript.Echo "Another task that depends on the system being clean."
+	Dim Path, Folder, File
+	
+	Path = FileSystem.GetParentFolderName(WScript.ScriptFullName)
+	WScript.Echo "Enumerating files in '" & Path & "'..."
+	
+	Set Folder = FileSystem.GetFolder(Path)
+	For Each File In Folder.Files
+		WScript.Echo File.Name
+	Next
+	Set Folder = Nothing
 End Sub
 
 Public Sub Test()
 	Depends("Build")
 	Depends("Clean")
-	Depends("AnotherTask")
+	Depends("ListAllFiles")
 	
 	WScript.Echo "Running applications test suite..."
 End Sub

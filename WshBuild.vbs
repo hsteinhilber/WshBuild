@@ -89,7 +89,11 @@ Sub Import(ByVal FileName)
 End Sub
 
 Sub ExecuteTasks()
-	Execute "Call Test"
+	Dim Argument 
+	
+	For Each Argument In WScript.Arguments
+		ExecuteTask Argument
+	Next
 End Sub
 
 Public Sub ExecuteTask(ByVal TaskName) 
