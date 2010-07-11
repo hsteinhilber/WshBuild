@@ -20,36 +20,6 @@ Option Explicit
 ' OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ' THE SOFTWARE.
 
-' This is a test build file
-
-Public Sub Clean()
-	WScript.Echo "Cleaning application files..."
-End Sub
-
-Public Sub Build()
-	Depends("Clean")
-	CompileMde "SomeDb.mdb"
-End Sub
-
-Public Sub ListAllFiles()
-	Depends("Clean")
-	
-	Dim Path, Folder, File
-	
-	Path = FileSystem.GetParentFolderName(WScript.ScriptFullName)
-	WScript.Echo "Enumerating files in '" & Path & "'..."
-	
-	Set Folder = FileSystem.GetFolder(Path)
-	For Each File In Folder.Files
-		WScript.Echo File.Name
-	Next
-	Set Folder = Nothing
-End Sub
-
-Public Sub Test()
-	Depends("Build")
-	Depends("Clean")
-	Depends("ListAllFiles")
-	
-	WScript.Echo "Running applications test suite..."
+Public Sub CompileMde(ByVal DatabaseFileName)
+	WScript.Echo "Compiling " & DatabaseFileName & " Mdb file into an MDE file..."
 End Sub

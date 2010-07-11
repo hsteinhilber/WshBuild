@@ -25,12 +25,14 @@ Dim WshNetwork
 Dim FileSystem
 Dim ExecutedTasks
 
+Const UserBuildFile = "Build.vbs"
+
 Sub Main()
 	On Error Resume Next
 	Initialize
 	EnsureRunningInConsole
 	DisplayLogo 
-	Import "Build.vbs"
+	ImportFiles
 	ExecuteTasks
 	ExitBuild Err.Number, Err.Description 
 End Sub
@@ -74,6 +76,30 @@ Sub ExitBuild(ByVal ExitCode, ByVal Description)
 		WScript.Echo "Build Successful"
 	End If
 	WScript.Quit ExitCode
+End Sub
+
+Sub ImportFiles()
+	ImportAddinFiles
+	Import UserBuildFile
+End Sub
+
+Sub ImportAddinFiles()
+	Dim Path, Folder, File
+	
+	Path = FileSystem.GetParentFolderName(WScript.ScriptFullName)
+	Path = FileSystem.BuildPath(Path, "Addins")
+	If FileSystem.FolderExists(Path) Then 
+		WScript.Echo "Loading add-ins from " & Path
+		Set Folder = FileSystem.GetFolder(Path)
+		For Each File In Folder.Files
+			If FileSystem.GetExtensionName(File.Name) = "evbs" Then
+				WScript.Echo "Importing " & FileSystem.GetBaseName(File.Name) & " extensions"
+				Import File.Path
+			End If
+		Next
+		Set Folder = Nothing
+		WScript.Echo 
+	End If
 End Sub
 
 Sub Import(ByVal FileName)
