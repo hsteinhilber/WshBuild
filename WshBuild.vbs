@@ -114,6 +114,10 @@ Sub Import(ByVal FileName)
 	ExecuteGlobal CodeText
 End Sub
 
+Sub DisplayTaskStatus(ByVal TaskName, ByVal Status)
+	WScript.Echo "[" & TaskName & "]: " & Status & vbNewLine
+End Sub
+
 Sub ExecuteTasks()
 	Dim Argument 
 	
@@ -123,9 +127,17 @@ Sub ExecuteTasks()
 End Sub
 
 Public Sub ExecuteTask(ByVal TaskName) 
-	WScript.Echo "[" & TaskName & "]:" & vbNewline
+	On Error Resume Next
+	
+	DisplayTaskStatus TaskName, ""
 	Execute "Call " & TaskName
 	WScript.Echo 
+	If Err <> 0 Then
+		DisplayTaskStatus TaskName, Err.Description
+		On Error Goto 0
+		Err.Raise Err.Number, Err.Source, Err.Description
+	End If
+	DisplayTaskStatus TaskName, "Success"
 End Sub
 
 Public Sub Depends(ByVal TaskName)

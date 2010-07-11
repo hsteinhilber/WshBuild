@@ -53,3 +53,9 @@ Public Sub Test()
 	
 	WScript.Echo "Running applications test suite..."
 End Sub
+
+Public Sub TaskShouldFail()
+	Depends("Build")
+	
+	Err.Raise 5, "This task should fail!"
+End Sub
