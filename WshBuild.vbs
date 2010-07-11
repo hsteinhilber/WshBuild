@@ -1,5 +1,5 @@
 Option Explicit
-' VBScript Build System
+' WshScript Build System
 ' Copyright (c) 2010 Harry Steinhilber, Jr.
 
 ' Permission is hereby granted, free of charge, to any person obtaining a copy
