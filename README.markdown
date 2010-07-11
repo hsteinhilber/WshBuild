@@ -40,5 +40,13 @@ Probably not. But then again, it is really only being written for a couple of
 projects I have at work that have very basic needs. If someone else finds it 
 useful, though, please let me know.
 
+## How do I use it?
+
+It is really very simple. Just check out the 
+[How to Use WshScript](http://wiki.github.com/hsteinhilber/WshBuild/how-to-use-wshbuild)
+page at [GitHub](http://github.com).
+
+## How can I contact you?
+
 You can contact me through my blog [Random Code Patterns](http://hsteinhilber.blogspot.com)
 or on [Twitter](http://www.twitter.com/hsteinhilber).
