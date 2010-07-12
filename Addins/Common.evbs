@@ -36,3 +36,8 @@ Public Function RevisionFromTime()
 	' Converts the time since midnight into a revision number.
 	RevisionFromTime = DateDiff("S", Now(), DateValue(Now())) \ 2
 End Function 
+
+Public Function MapPath(ByVal FileName)
+    FileName = WshShell.ExpandEnvironmentStrings(FileName)
+    MapPath = FileSystem.GetAbsolutePathName(FileName)
+End Function
