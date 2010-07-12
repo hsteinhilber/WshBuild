@@ -50,3 +50,16 @@ Public Sub CompileMde(ByVal DatabaseFileName)
 	End If
 	QuitAccessInstance
 End Sub 
+
+Public Function GetProjectProperty(ByVal Name, ByVal DefaultValue)
+    On Error Resume Next
+    
+    GetProjectProperty = AccessApp.CurrentProject.Properties(Name)
+    If Err = 2455 Then
+        AccessApp.CurrentProject.Properties.Add Name, DefaultValue
+        GetProjectProperty = DefaultValue
+    ElseIf Err <> 0 Then    
+        On Error Goto 0
+        Err.Raise Err.Number, Err.Source, Err.Description
+    End If
+End Function 
