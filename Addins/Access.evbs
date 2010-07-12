@@ -20,6 +20,33 @@ Option Explicit
 ' OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ' THE SOFTWARE.
 
-Public Sub CompileMde(ByVal DatabaseFileName)
-	WScript.Echo "Compiling " & DatabaseFileName & " Mdb file into an MDE file..."
+Dim AccessApp
+
+Public Sub StartAccessInstance()
+	Set AccessApp = WScript.CreateObject("Access.Application")
 End Sub
+
+Public Sub QuitAccessInstance()
+	If Not AccessApp Is Nothing Then AccessApp.Quit
+	Set AccessApp = Nothing
+End Sub
+
+Public Sub CompileMde(ByVal DatabaseFileName)
+	Dim SourcePath, DestinationPath, Extension
+	
+	SourcePath = WshShell.ExpandEnvironmentStrings(DatabaseFileName)
+	SourcePath = FileSystem.GetAbsolutePathName(SourcePath)
+	DestinationPath = Left(SourcePath, Len(SourcePath) - 1) & "e"
+		
+	StartAccessInstance
+	
+	On Error Resume Next
+	AccessApp.SysCmd 603, SourcePath, DestinationPath
+	
+	' BUG: QuitAccessInstance may reset error or generate a new one, need to fix this.
+	If Err <> 0 Then
+		QuitAccessInstance
+		Err.Raise Err.Number, Err.Source, Err.Description
+	End If
+	QuitAccessInstance
+End Sub 
