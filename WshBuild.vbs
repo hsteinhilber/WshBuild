@@ -93,12 +93,16 @@ Sub ImportAddinFiles()
 		Set Folder = FileSystem.GetFolder(Path)
 		For Each File In Folder.Files
 			If FileSystem.GetExtensionName(File.Name) = "evbs" Then
+				On Error Resume Next
 				WScript.Echo "Importing " & FileSystem.GetBaseName(File.Name) & " extensions"
 				Import File.Path
+				If Err <> 0 Then WScript.Echo "Failed to load " & File.Name & " extensions - " & Err.Description
+				On Error Goto 0 
 			End If
 		Next
 		Set Folder = Nothing
 		WScript.Echo 
+		Err.Clear
 	End If
 End Sub
 
