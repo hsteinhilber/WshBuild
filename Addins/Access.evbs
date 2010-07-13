@@ -23,7 +23,7 @@ Option Explicit
 Dim AccessApp
 
 Public Sub StartAccessInstance()
-	Set AccessApp = WScript.CreateObject("Access.Application")
+	Set AccessApp = CreateObject("Access.Application")
 End Sub
 
 Public Sub QuitAccessInstance()
@@ -32,27 +32,24 @@ Public Sub QuitAccessInstance()
 End Sub
 
 Public Sub CompileMde(ByVal DatabaseFileName)
-	Dim SourcePath, DestinationPath, Extension
-	
-	SourcePath = WshShell.ExpandEnvironmentStrings(DatabaseFileName)
-	SourcePath = FileSystem.GetAbsolutePathName(SourcePath)
-	DestinationPath = Left(SourcePath, Len(SourcePath) - 1) & "e"
-		
-	StartAccessInstance
-
-	On Error Resume Next
-	AccessApp.SysCmd 603, SourcePath, DestinationPath
-	
-	' BUG: QuitAccessInstance may reset error or generate a new one, need to fix this.
-	If Err <> 0 Then
-        Dim Num, Src, Desc
-        Num = Err.Number : Src = Err.Source : Desc = Err.Description 
-		QuitAccessInstance
-        On Error Goto 0
-		Err.Raise Num, Src, Desc
-	End If
-	QuitAccessInstance
-End Sub 
+    Dim SourcePath, DestinationPath
+    
+    SourcePath = WshShell.ExpandEnvironmentStrings(DatabaseFileName)
+    SourcePath = FileSystem.GetAbsolutePathName(SourcePath)
+    DestinationPath = Left(SourcePath, Len(SourcePath) - 1) & "e"
+        
+    StartAccessInstance
+    
+    On Error Resume Next
+    AccessApp.SysCmd 603, SourcePath, DestinationPath
+    
+    If Err <> 0 Then
+        Dim Num, Src, Desc: Num = Err.Number: Src = Err.Source: Desc = Err.Description
+        QuitAccessInstance
+        On Error GoTo 0: Err.Raise Num, Src, Desc
+    End If
+    QuitAccessInstance
+End Sub
 
 Public Function GetProjectProperty(ByVal Name, ByVal DefaultValue)
     On Error Resume Next

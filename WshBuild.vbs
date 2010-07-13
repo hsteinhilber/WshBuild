@@ -137,11 +137,9 @@ Public Sub ExecuteTask(ByVal TaskName)
 	Execute "Call " & TaskName
 	WScript.Echo 
 	If Err <> 0 Then
-        Dim Num, Src, Desc
-        Num = Err.Number: Src = Err.Source : Desc = Err.Description
+        Dim Num, Src, Desc: Num = Err.Number: Src = Err.Source : Desc = Err.Description
 		DisplayTaskStatus TaskName, Err.Description
-		On Error Goto 0
-		Err.Raise Num, Src, Desc
+		On Error Goto 0: Err.Raise Num, Src, Desc
 	End If
 	DisplayTaskStatus TaskName, "Success"
 End Sub
