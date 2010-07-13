@@ -85,7 +85,7 @@ End Sub
 
 Sub ImportAddinFiles()
 	Dim Path, Folder, File
-	
+
 	Path = FileSystem.GetParentFolderName(WScript.ScriptFullName)
 	Path = FileSystem.BuildPath(Path, "Addins")
 	If FileSystem.FolderExists(Path) Then 
@@ -124,7 +124,7 @@ End Sub
 
 Sub ExecuteTasks()
 	Dim Argument 
-	
+
 	For Each Argument In WScript.Arguments
 		ExecuteTask Argument
 	Next
@@ -132,12 +132,12 @@ End Sub
 
 Public Sub ExecuteTask(ByVal TaskName) 
 	On Error Resume Next
-	
+
 	DisplayTaskStatus TaskName, ""
 	Execute "Call " & TaskName
 	WScript.Echo 
 	If Err <> 0 Then
-        Dim Num, Src, Desc: Num = Err.Number: Src = Err.Source : Desc = Err.Description
+		Dim Num, Src, Desc: Num = Err.Number: Src = Err.Source : Desc = Err.Description
 		DisplayTaskStatus TaskName, Err.Description
 		On Error Goto 0: Err.Raise Num, Src, Desc
 	End If

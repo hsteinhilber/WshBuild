@@ -32,34 +32,35 @@ Public Sub QuitAccessInstance()
 End Sub
 
 Public Sub CompileMde(ByVal DatabaseFileName)
-    Dim SourcePath, DestinationPath
-    
-    SourcePath = WshShell.ExpandEnvironmentStrings(DatabaseFileName)
-    SourcePath = FileSystem.GetAbsolutePathName(SourcePath)
-    DestinationPath = Left(SourcePath, Len(SourcePath) - 1) & "e"
-        
-    StartAccessInstance
-    
-    On Error Resume Next
-    AccessApp.SysCmd 603, SourcePath, DestinationPath
-    
-    If Err <> 0 Then
-        Dim Num, Src, Desc: Num = Err.Number: Src = Err.Source: Desc = Err.Description
-        QuitAccessInstance
-        On Error GoTo 0: Err.Raise Num, Src, Desc
-    End If
-    QuitAccessInstance
+	Dim SourcePath, DestinationPath
+	
+	SourcePath = WshShell.ExpandEnvironmentStrings(DatabaseFileName)
+	SourcePath = FileSystem.GetAbsolutePathName(SourcePath)
+	DestinationPath = Left(SourcePath, Len(SourcePath) - 1) & "e"
+
+	StartAccessInstance
+
+	On Error Resume Next
+	' HACK: Using an undocumented SysCmd to build MDE/ADE files
+	AccessApp.SysCmd 603, SourcePath, DestinationPath
+
+	If Err <> 0 Then
+		Dim Num, Src, Desc: Num = Err.Number: Src = Err.Source: Desc = Err.Description
+		QuitAccessInstance
+		On Error GoTo 0: Err.Raise Num, Src, Desc
+	End If
+	QuitAccessInstance
 End Sub
 
 Public Function GetProjectProperty(ByVal Name, ByVal DefaultValue)
-    On Error Resume Next
-    
-    GetProjectProperty = AccessApp.CurrentProject.Properties(Name)
-    If Err = 2455 Then
-        AccessApp.CurrentProject.Properties.Add Name, DefaultValue
-        GetProjectProperty = DefaultValue
-    ElseIf Err <> 0 Then    
-        On Error Goto 0
-        Err.Raise Err.Number, Err.Source, Err.Description
-    End If
-End Function 
+	On Error Resume Next
+
+	GetProjectProperty = AccessApp.CurrentProject.Properties(Name)
+	If Err = 2455 Then
+		AccessApp.CurrentProject.Properties.Add Name, DefaultValue
+		GetProjectProperty = DefaultValue
+	ElseIf Err <> 0 Then
+		On Error Goto 0
+		Err.Raise Err.Number, Err.Source, Err.Description
+	End If
+End Function
