@@ -34,7 +34,7 @@ End Function
 
 Public Function RevisionFromTime()
 	' Converts the time since midnight into a revision number.
-	RevisionFromTime = DateDiff("S", Now(), DateValue(Now())) \ 2
+	RevisionFromTime = DateDiff("S", DateValue(Now()), Now()) \ 2
 End Function 
 
 Public Function MapPath(ByVal FileName)
