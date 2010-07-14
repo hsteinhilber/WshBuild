@@ -38,10 +38,10 @@ Public Function RevisionFromTime()
 End Function 
 
 Public Function MapPath(ByVal FileName)
-    FileName = WshShell.ExpandEnvironmentStrings(FileName)
-    MapPath = FileSystem.GetAbsolutePathName(FileName)
+	FileName = WshShell.ExpandEnvironmentStrings(FileName)
+	MapPath = FileSystem.GetAbsolutePathName(FileName)
 End Function
 
 Public Function CopyFileToFolder(ByVal FileName, ByVal FolderPath)
-    FileSystem.CopyFile MapPath(FileName), FileSystem.BuildPath(MapPath(FolderPath), FileName), True
+	FileSystem.CopyFile MapPath(FileName), FileSystem.BuildPath(MapPath(FolderPath), FileName), True
 End Function 
