@@ -114,7 +114,9 @@ Private Sub ExportAccessObjects(ByVal Objects, ByVal ExportPath, ByVal ObjectTyp
     Dim AccessObject 
     
     WScript.Echo "Exporting " & FileSystem.GetBaseName(ExportPath) & "..."
-    If Not FileSystem.FolderExists(ExportPath) Then FileSystem.CreateFolder ExportPath
+    If FileSystem.FolderExists(ExportPath) Then FileSystem.DeleteFolder ExportPath
+    FileSystem.CreateFolder ExportPath
+    
     For Each AccessObject In Objects
         AccessApp.SaveAsText ObjectType, AccessObject.Name, FileSystem.BuildPath(ExportPath, AccessObject.Name)
     Next
