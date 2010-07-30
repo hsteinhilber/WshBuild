@@ -21,6 +21,12 @@ Option Explicit
 ' THE SOFTWARE.
 
 Dim AccessApp
+Public Const acTable = 0
+Public Const acQuery = 1
+Public Const acForm = 2
+Public Const acReport = 3
+Public Const acMacro = 4
+Public Const acModule = 5
 
 Public Sub StartAccessInstance()
 	Set AccessApp = CreateObject("Access.Application")
@@ -53,14 +59,66 @@ Public Sub CompileMde(ByVal DatabaseFileName)
 End Sub
 
 Public Function GetProjectProperty(ByVal Name, ByVal DefaultValue)
-	On Error Resume Next
+    On Error Resume Next
+    
+    GetProjectProperty = AccessApp.CurrentProject.Properties(Name)
+    If Err = 2455 Then
+        AccessApp.CurrentProject.Properties.Add Name, DefaultValue
+        GetProjectProperty = DefaultValue
+    ElseIf Err <> 0 Then    
+        On Error Goto 0
+        Err.Raise Err.Number, Err.Source, Err.Description
+    End If
+End Function 
 
-	GetProjectProperty = AccessApp.CurrentProject.Properties(Name)
-	If Err = 2455 Then
-		AccessApp.CurrentProject.Properties.Add Name, DefaultValue
-		GetProjectProperty = DefaultValue
-	ElseIf Err <> 0 Then
-		On Error Goto 0
-		Err.Raise Err.Number, Err.Source, Err.Description
-	End If
-End Function
+Public Sub ExtractAccessProjectObjects(ByVal DatabaseFileName, ByVal ExportPath)
+    Dim Project
+    On Error Resume Next
+    StartAccessInstance
+    
+    DatabaseFileName = WshShell.ExpandEnvironmentStrings(DatabaseFileName)
+    DatabaseFileName = FileSystem.GetAbsolutePathName(DatabaseFileName)
+
+    ExportPath = WshShell.ExpandEnvironmentStrings(ExportPath)
+    ExportPath = FileSystem.GetAbsolutePathName(ExportPath)
+    If Not FileSystem.FolderExists(ExportPath) Then FileSystem.CreateFolder ExportPath
+
+    AccessApp.OpenAccessProject DatabaseFileName
+    Set Project = AccessApp.CurrentProject
+    
+    ExportAccessObjects Project.AllForms, FileSystem.BuildPath(ExportPath, "Forms"), acForm
+    
+    ExportAccessObjects Project.AllReports, FileSystem.BuildPath(ExportPath, "Reports"), acReport
+    
+    ExportAccessObjects Project.AllMacros, FileSystem.BuildPath(ExportPath, "Macros"), acMacro
+    
+    ExportAccessObjects Project.AllModules, FileSystem.BuildPath(ExportPath, "Modules"), acModule
+    
+    WScript.Echo "Exporting Tables..."
+    Rem For Each td In db.TableDefs 'Tables
+        Rem If Left(td.Name, 4) <> "MSys" Then
+            Rem DoCmd.TransferText acExportDelim, , td.Name, ExportPath & "Table_" & td.Name & ".txt", True
+        Rem End If
+    Rem Next td
+    
+    WScript.Echo "Exporting Queries..."
+    Rem For i = 0 To db.QueryDefs.Count - 1
+        Rem Application.SaveAsText acQuery, db.QueryDefs(i).Name, ExportPath & "Query_" & db.QueryDefs(i).Name & ".txt"
+    Rem Next i
+    
+    Set Project = Nothing
+    
+    QuitAccessInstance
+End Sub 
+
+Private Sub ExportAccessObjects(ByVal Objects, ByVal ExportPath, ByVal ObjectType)
+    Dim AccessObject 
+    
+    WScript.Echo "Exporting " & FileSystem.GetBaseName(ExportPath) & "..."
+    If FileSystem.FolderExists(ExportPath) Then FileSystem.DeleteFolder ExportPath
+    FileSystem.CreateFolder ExportPath
+    
+    For Each AccessObject In Objects
+        AccessApp.SaveAsText ObjectType, AccessObject.Name, FileSystem.BuildPath(ExportPath, AccessObject.Name)
+    Next
+End Sub 
