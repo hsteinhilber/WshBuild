@@ -123,8 +123,10 @@ Private Sub ExtractAccessDatabaseObjects(ByVal DatabaseFileName, ByVal ExportPat
 	If FileSystem.FolderExists(OutputPath) Then FileSystem.DeleteFolder OutputPath
 	FileSystem.CreateFolder OutputPath
 	For Each DbObject In Database.QueryDefs
-		AccessApp.SaveAsText acQuery, DbObject.Name, FileSystem.BuildPath(OutputPath, DbObject.Name)
-	Next 
+		If Left(DbObject.Name, 1) <> "~" Then
+			AccessApp.SaveAsText acQuery, DbObject.Name, FileSystem.BuildPath(OutputPath, DbObject.Name)
+		End If
+Next 
 	
 	AccessApp.CloseCurrentDatabase
 End Sub
