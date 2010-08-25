@@ -114,7 +114,12 @@ Private Sub ExtractAccessDatabaseObjects(ByVal DatabaseFileName, ByVal ExportPat
 	FileSystem.CreateFolder OutputPath
 	For Each DbObject In Database.TableDefs
 		If LCase(Left(DbObject.Name, 4)) <> "msys" And Left(DbObject.Name, 1) <> "~" Then
-			AccessApp.ExportXML acTable, DbObject.Name, , FileSystem.BuildPath(OutputPath, DbObject.Name)
+			If Len(DbObject.Connect) = 0 Then
+				AccessApp.ExportXML acTable, DbObject.Name, , FileSystem.BuildPath(OutputPath, DbObject.Name)
+			Else
+				ExportLinkedTable  DbObject, FileSystem.GetParentFolderName(DatabaseFileName), _
+					FileSystem.BuildPath(OutputPath, DbObject.Name)
+			End If
 		End If
 	Next
 	
@@ -126,9 +131,30 @@ Private Sub ExtractAccessDatabaseObjects(ByVal DatabaseFileName, ByVal ExportPat
 		If Left(DbObject.Name, 1) <> "~" Then
 			AccessApp.SaveAsText acQuery, DbObject.Name, FileSystem.BuildPath(OutputPath, DbObject.Name)
 		End If
-Next 
+	Next 
 	
 	AccessApp.CloseCurrentDatabase
+End Sub
+
+Private Sub ExportLinkedTable(ByVal DbObject, ByVal DatabasePath, ByVal OutputFilePath)
+	Dim TextFile, LinkPath, LocalName, SourceName
+	
+	LocalName = DbObject.Name
+	SourceName = DbObject.SourceTableName
+	LinkPath = Mid(DbObject.Connect, 11)
+	If InStr(LinkPath, DatabasePath) = 1 Then 
+		LinkPath = Replace(LinkPath, DatabasePath, "")
+		LinkPath = FileSystem.BuildPath(".", LinkPath)
+	End If
+	
+	Set TextFile = FileSystem.CreateTextFile(OutputFilePath, True)
+	TextFile.Write "<?xml version=""1.0""?>" & vbNewLine & _
+	               "<table name=""" & LocalName & """>" & vbNewLine & _
+				   "  <database>" & LinkPath & "</database>" & vbNewLine & _
+				   "  <source>" & SourceName & "</source>" & vbNewLine & _
+				   "</table>"
+	TextFile.Close
+	Set TextFile = Nothing 
 End Sub
 
 Private Sub ExportAccessContainerDocuments(ByVal Containers, ByVal ExportPath, ByVal ObjectType)
