@@ -43,5 +43,7 @@ Public Function MapPath(ByVal FileName)
 End Function
 
 Public Function CopyFileToFolder(ByVal FileName, ByVal FolderPath)
-	FileSystem.CopyFile MapPath(FileName), FileSystem.BuildPath(MapPath(FolderPath), FileName), True
+	Dim BaseName
+	BaseName = FileSystem.GetFile(MapPath(FileName)).Name
+	FileSystem.CopyFile MapPath(FileName), FileSystem.BuildPath(MapPath(FolderPath), BaseName), True
 End Function 
