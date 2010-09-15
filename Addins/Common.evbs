@@ -47,3 +47,11 @@ Public Function CopyFileToFolder(ByVal FileName, ByVal FolderPath)
 	BaseName = FileSystem.GetFile(MapPath(FileName)).Name
 	FileSystem.CopyFile MapPath(FileName), FileSystem.BuildPath(MapPath(FolderPath), BaseName), True
 End Function 
+
+Public Function StrStartsWith(ByVal Text, ByVal SearchText)
+  StrStartsWith = (Left(Text, Len(SearchText)) = SearchText)
+End Function
+
+Public Function StrEndsWith(ByVal Text, ByVal SearchText)
+  StrEndsWith = (Right(Text, Len(SearchText)) = SearchText)
+End Function 
