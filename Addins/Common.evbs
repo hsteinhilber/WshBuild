@@ -49,9 +49,9 @@ Public Function CopyFileToFolder(ByVal FileName, ByVal FolderPath)
 End Function 
 
 Public Function StrStartsWith(ByVal Text, ByVal SearchText)
-  StrStartsWith = (Left(Text, Len(SearchText)) = SearchText)
+  StrStartsWith = (LCase(Left(Text, Len(SearchText))) = LCase(SearchText))
 End Function
 
 Public Function StrEndsWith(ByVal Text, ByVal SearchText)
-  StrEndsWith = (Right(Text, Len(SearchText)) = SearchText)
+  StrEndsWith = (LCase(Right(Text, Len(SearchText))) = LCase(SearchText))
 End Function 
