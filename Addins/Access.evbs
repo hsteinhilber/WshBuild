@@ -83,7 +83,7 @@ Class AccessAddin
     ExportPath = ExpandPath(ExportPath)
     If Not FileSystem.FolderExists(ExportPath) Then FileSystem.CreateFolder ExportPath
 
-    If FileSystem.GetExtensionName(DatabaseFileName) = ".adp" Or FileSystem.GetExtensionName(DatabaseFileName) = ".ade" Then    
+    If CheckFileExtension(DatabaseFileName, ".adp") Or CheckFileExtension(DatabaseFileName, ".ade") Then    
         ExtractAccessProjectObjects DatabaseFileName, ExportPath
     Else    
         ExtractAccessDatabaseObjects DatabaseFileName, ExportPath
@@ -214,6 +214,9 @@ Class AccessAddin
     ExpandPath = FileSystem.GetAbsolutePathName(ExpandPath)
   End Function
 
+  Private Function CheckFileExtension(ByVal Path, ByVal Extension)
+    CheckFileExtension = (LCase(FileSystem.GetExtensionName(Path)) = LCase(Extension))
+  End Function
 End Class
 
 Public Sub InitializeAccessAddin()
