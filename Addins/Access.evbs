@@ -20,7 +20,6 @@ Option Explicit
 ' OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ' THE SOFTWARE.
 
-Dim AccessApp
 Public Const acTable = 0
 Public Const acQuery = 1
 Public Const acForm = 2
@@ -30,52 +29,56 @@ Public Const acModule = 5
 
 Private Const acExportDelim = 2
 
-Public Sub StartAccessInstance()
-    Set AccessApp = CreateObject("Access.Application")
-End Sub
+Public Access ' InitializeAccessAddin dependency task will initialize this variable for use in tasks
 
-Public Sub QuitAccessInstance()
-    If Not AccessApp Is Nothing Then AccessApp.Quit
-    Set AccessApp = Nothing
-End Sub
+Class AccessAddin
+  Private InnerApplication
 
-Public Sub CompileMde(ByVal DatabaseFileName)
+  Public Sub Class_Initialize()
+    Set InnerApplication = CreateObject("Access.Application")
+  End Sub
+
+  Public Sub Class_Terminate()   
+    If Not InnerApplication Is Nothing Then InnerApplication.Quit
+    Set InnerApplication = Nothing
+  End Sub
+
+  Public Property Get Application()
+    Set Application = InnerApplication
+  End Property
+
+  Public Sub CompileMde(ByVal DatabaseFileName)
     Dim SourcePath, DestinationPath
 
     SourcePath = WshShell.ExpandEnvironmentStrings(DatabaseFileName)
     SourcePath = FileSystem.GetAbsolutePathName(SourcePath)
     DestinationPath = Left(SourcePath, Len(SourcePath) - 1) & "e"
 
-    StartAccessInstance
-    
     On Error Resume Next
     ' HACK: Using an undocumented SysCmd to build MDE/ADE files
-    AccessApp.SysCmd 603, CStr(SourcePath), CStr(DestinationPath)
+    InnerApplication.SysCmd 603, CStr(SourcePath), CStr(DestinationPath)
     
     If Err <> 0 Then
         Dim Num, Src, Desc: Num = Err.Number: Src = Err.Source: Desc = Err.Description
-        QuitAccessInstance
         On Error GoTo 0: Err.Raise Num, Src, Desc
     End If
-    QuitAccessInstance
-End Sub
+  End Sub
 
-Public Function GetProjectProperty(ByVal Name, ByVal DefaultValue)
+  Public Function GetProjectProperty(ByVal Name, ByVal DefaultValue)
     On Error Resume Next
     
-    GetProjectProperty = AccessApp.CurrentProject.Properties(Name)
+    GetProjectProperty = InnerApplication.CurrentProject.Properties(Name)
     If Err = 2455 Then
-        AccessApp.CurrentProject.Properties.Add Name, DefaultValue
+        InnerApplication.CurrentProject.Properties.Add Name, DefaultValue
         GetProjectProperty = DefaultValue
     ElseIf Err <> 0 Then    
         On Error Goto 0
         Err.Raise Err.Number, Err.Source, Err.Description
     End If
-End Function 
+  End Function 
 
-Public Sub ExportAccessObjects(ByVal DatabaseFileName, ByVal ExportPath)
+  Public Sub ExportAccessObjects(ByVal DatabaseFileName, ByVal ExportPath)
     On Error Resume Next 
-    StartAccessInstance
     
     DatabaseFileName = WshShell.ExpandEnvironmentStrings(DatabaseFileName)
     DatabaseFileName = FileSystem.GetAbsolutePathName(DatabaseFileName)
@@ -89,16 +92,14 @@ Public Sub ExportAccessObjects(ByVal DatabaseFileName, ByVal ExportPath)
     Else    
         ExtractAccessDatabaseObjects DatabaseFileName, ExportPath
     End If
-    
-    QuitAccessInstance
-End Sub 
+  End Sub 
 
-Private Sub ExtractAccessDatabaseObjects(ByVal DatabaseFileName, ByVal ExportPath)
+  Private Sub ExtractAccessDatabaseObjects(ByVal DatabaseFileName, ByVal ExportPath)
     Dim Database, DbObject, OutputPath
     On Error Resume Next 
     
-    AccessApp.OpenCurrentDatabase DatabaseFileName
-    Set Database = AccessApp.CurrentDb 
+    InnerApplication.OpenCurrentDatabase DatabaseFileName
+    Set Database = InnerApplication.CurrentDb 
     
     ExportAccessContainerDocuments Database.Containers, FileSystem.BuildPath(ExportPath, "Forms"), acForm
     
@@ -115,7 +116,7 @@ Private Sub ExtractAccessDatabaseObjects(ByVal DatabaseFileName, ByVal ExportPat
     For Each DbObject In Database.TableDefs
         If Not StrStartsWith(DbObject.Name, "msys") And Not StrStartsWith(DbObject.Name, "~") Then
             If Len(DbObject.Connect) = 0 Then
-                AccessApp.ExportXML acTable, DbObject.Name, , FileSystem.BuildPath(OutputPath, DbObject.Name)
+                InnerApplication.ExportXML acTable, DbObject.Name, , FileSystem.BuildPath(OutputPath, DbObject.Name)
             Else
                 ExportLinkedTable  DbObject, FileSystem.GetParentFolderName(DatabaseFileName), _
                     FileSystem.BuildPath(OutputPath, DbObject.Name)
@@ -129,14 +130,14 @@ Private Sub ExtractAccessDatabaseObjects(ByVal DatabaseFileName, ByVal ExportPat
     FileSystem.CreateFolder OutputPath
     For Each DbObject In Database.QueryDefs
         If Not StrStartsWith(DbObject.Name, "~") Then
-            AccessApp.SaveAsText acQuery, DbObject.Name, FileSystem.BuildPath(OutputPath, DbObject.Name)
+            InnerApplication.SaveAsText acQuery, DbObject.Name, FileSystem.BuildPath(OutputPath, DbObject.Name)
         End If
     Next 
     
-    AccessApp.CloseCurrentDatabase
-End Sub
+    InnerApplication.CloseCurrentDatabase
+  End Sub
 
-Private Sub ExportLinkedTable(ByVal DbObject, ByVal DatabasePath, ByVal OutputFilePath)
+  Private Sub ExportLinkedTable(ByVal DbObject, ByVal DatabasePath, ByVal OutputFilePath)
     Dim TextFile, LinkPath, LocalName, SourceName
     
     LocalName = DbObject.Name
@@ -155,9 +156,9 @@ Private Sub ExportLinkedTable(ByVal DbObject, ByVal DatabasePath, ByVal OutputFi
                    "</table>"
     TextFile.Close
     Set TextFile = Nothing 
-End Sub
+  End Sub
 
-Private Sub ExportAccessContainerDocuments(ByVal Containers, ByVal ExportPath, ByVal ObjectType)
+  Private Sub ExportAccessContainerDocuments(ByVal Containers, ByVal ExportPath, ByVal ObjectType)
     Dim Current, DbObject 
     
     Current = FileSystem.GetBaseName(ExportPath)
@@ -166,16 +167,16 @@ Private Sub ExportAccessContainerDocuments(ByVal Containers, ByVal ExportPath, B
     FileSystem.CreateFolder ExportPath
     
     For Each DbObject In Containers(Current).Documents
-        AccessApp.SaveAsText ObjectType, DbObject.Name, FileSystem.BuildPath(ExportPath, DbObject.Name)
+        InnerApplication.SaveAsText ObjectType, DbObject.Name, FileSystem.BuildPath(ExportPath, DbObject.Name)
     Next
-End Sub
+  End Sub
 
-Private Sub ExtractAccessProjectObjects(ByVal DatabaseFileName, ByVal ExportPath)
+  Private Sub ExtractAccessProjectObjects(ByVal DatabaseFileName, ByVal ExportPath)
     Dim Project
     On Error Resume Next
 
-    AccessApp.OpenAccessProject DatabaseFileName
-    Set Project = AccessApp.CurrentProject
+    InnerApplication.OpenAccessProject DatabaseFileName
+    Set Project = InnerApplication.CurrentProject
     
     ExportAccessProjectObjects Project.AllForms, FileSystem.BuildPath(ExportPath, "Forms"), acForm
     
@@ -198,9 +199,9 @@ Private Sub ExtractAccessProjectObjects(ByVal DatabaseFileName, ByVal ExportPath
     Rem Next i
     
     Set Project = Nothing
-End Sub 
+  End Sub 
 
-Private Sub ExportAccessProjectObjects(ByVal Objects, ByVal ExportPath, ByVal ObjectType)
+  Private Sub ExportAccessProjectObjects(ByVal Objects, ByVal ExportPath, ByVal ObjectType)
     Dim AccessObject 
     
     WScript.Echo "Exporting " & FileSystem.GetBaseName(ExportPath) & "..."
@@ -208,6 +209,11 @@ Private Sub ExportAccessProjectObjects(ByVal Objects, ByVal ExportPath, ByVal Ob
     FileSystem.CreateFolder ExportPath
     
     For Each AccessObject In Objects
-        AccessApp.SaveAsText ObjectType, AccessObject.Name, FileSystem.BuildPath(ExportPath, AccessObject.Name)
+        InnerApplication.SaveAsText ObjectType, AccessObject.Name, FileSystem.BuildPath(ExportPath, AccessObject.Name)
     Next
-End Sub 
+  End Sub 
+End Class
+
+Public Sub InitializeAccessAddin()
+  Set Access = New AccessAddin
+End Sub
