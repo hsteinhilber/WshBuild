@@ -60,20 +60,16 @@ Class AccessAddin
     InnerApplication.CloseCurrentDatabase
   End Sub
 
-  Public Sub CompileMde(ByVal DatabaseFileName)
+  Public Sub CompileDatabase()
     Dim SourcePath, DestinationPath
 
-    SourcePath = ExpandPath(DatabaseFileName)
+    SourcePath = InnerApplication.CurrentProject.FullName
     DestinationPath = Left(SourcePath, Len(SourcePath) - 1) & "e"
 
-    On Error Resume Next
     ' HACK: Using an undocumented SysCmd to build MDE/ADE files
+    Me.CloseDatabase
     InnerApplication.SysCmd 603, CStr(SourcePath), CStr(DestinationPath)
-    
-    If Err <> 0 Then
-        Dim Num, Src, Desc: Num = Err.Number: Src = Err.Source: Desc = Err.Description
-        On Error GoTo 0: Err.Raise Num, Src, Desc
-    End If
+    Me.OpenDatabase SourcePath
   End Sub
 
   Public Function GetProjectProperty(ByVal Name, ByVal DefaultValue)
