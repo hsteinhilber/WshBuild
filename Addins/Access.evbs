@@ -50,8 +50,7 @@ Class AccessAddin
   Public Sub CompileMde(ByVal DatabaseFileName)
     Dim SourcePath, DestinationPath
 
-    SourcePath = WshShell.ExpandEnvironmentStrings(DatabaseFileName)
-    SourcePath = FileSystem.GetAbsolutePathName(SourcePath)
+    SourcePath = ExpandPath(DatabaseFileName)
     DestinationPath = Left(SourcePath, Len(SourcePath) - 1) & "e"
 
     On Error Resume Next
@@ -80,11 +79,8 @@ Class AccessAddin
   Public Sub ExportAccessObjects(ByVal DatabaseFileName, ByVal ExportPath)
     On Error Resume Next 
     
-    DatabaseFileName = WshShell.ExpandEnvironmentStrings(DatabaseFileName)
-    DatabaseFileName = FileSystem.GetAbsolutePathName(DatabaseFileName)
-
-    ExportPath = WshShell.ExpandEnvironmentStrings(ExportPath)
-    ExportPath = FileSystem.GetAbsolutePathName(ExportPath)
+    DatabaseFileName = ExpandPath(DatabaseFileName)
+    ExportPath = ExpandPath(ExportPath)
     If Not FileSystem.FolderExists(ExportPath) Then FileSystem.CreateFolder ExportPath
 
     If FileSystem.GetExtensionName(DatabaseFileName) = ".adp" Or FileSystem.GetExtensionName(DatabaseFileName) = ".ade" Then    
@@ -212,6 +208,12 @@ Class AccessAddin
         InnerApplication.SaveAsText ObjectType, AccessObject.Name, FileSystem.BuildPath(ExportPath, AccessObject.Name)
     Next
   End Sub 
+
+  Private Function ExpandPath(ByVal Path)
+    ExpandPath = WshShell.ExpandEnvironmentStrings(Path)
+    ExpandPath = FileSystem.GetAbsolutePathName(ExpandPath)
+  End Function
+
 End Class
 
 Public Sub InitializeAccessAddin()
