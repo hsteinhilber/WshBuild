@@ -72,18 +72,17 @@ Class AccessAddin
     Me.OpenDatabase SourcePath
   End Sub
 
-  Public Function GetProjectProperty(ByVal Name, ByVal DefaultValue)
+  Public Property Get Properties(ByVal Name)
     On Error Resume Next
-    
-    GetProjectProperty = InnerApplication.CurrentProject.Properties(Name)
+    Properties = InnerApplication.CurrentProject.Properties(Name)
     If Err = 2455 Then
-        InnerApplication.CurrentProject.Properties.Add Name, DefaultValue
-        GetProjectProperty = DefaultValue
-    ElseIf Err <> 0 Then    
-        On Error Goto 0
-        Err.Raise Err.Number, Err.Source, Err.Description
+      InnerApplication.CurrentProject.Properties.Add Name, vbNullString
+      Properties = vbNullString
     End If
-  End Function 
+  End Property
+  Public Property Let Properties(ByVal Name, ByVal Value)
+    InnerApplication.CurrentProject.Properties.Add Name, Value
+  End Property
 
   Public Sub ExportAccessObjects(ByVal DatabaseFileName, ByVal ExportPath)
     On Error Resume Next 
