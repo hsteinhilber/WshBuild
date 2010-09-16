@@ -47,6 +47,19 @@ Class AccessAddin
     Set Application = InnerApplication
   End Property
 
+  Public Sub OpenDatabase(ByVal DatabaseFileName)
+    DatabaseFileName = ExpandPath(DatabaseFileName)
+    If CheckFileExtension(DatabaseFileName, ".adp") Or CheckFileExtension(DatabaseFileName, ".ade") Then
+      InnerApplication.OpenAccessProject DatabaseFileName
+    Else
+      InnerApplication.OpenCurrentDatabase DatabaseFileName
+    End If
+  End Sub
+
+  Public Sub CloseDatabase()
+    InnerApplication.CloseCurrentDatabase
+  End Sub
+
   Public Sub CompileMde(ByVal DatabaseFileName)
     Dim SourcePath, DestinationPath
 
