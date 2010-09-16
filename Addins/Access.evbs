@@ -113,7 +113,7 @@ Private Sub ExtractAccessDatabaseObjects(ByVal DatabaseFileName, ByVal ExportPat
     If FileSystem.FolderExists(OutputPath) Then FileSystem.DeleteFolder OutputPath
     FileSystem.CreateFolder OutputPath
     For Each DbObject In Database.TableDefs
-        If LCase(Left(DbObject.Name, 4)) <> "msys" And Left(DbObject.Name, 1) <> "~" Then
+        If Not StrStartsWith(DbObject.Name, "msys") And Not StrStartsWith(DbObject.Name, "~") Then
             If Len(DbObject.Connect) = 0 Then
                 AccessApp.ExportXML acTable, DbObject.Name, , FileSystem.BuildPath(OutputPath, DbObject.Name)
             Else
@@ -128,7 +128,7 @@ Private Sub ExtractAccessDatabaseObjects(ByVal DatabaseFileName, ByVal ExportPat
     If FileSystem.FolderExists(OutputPath) Then FileSystem.DeleteFolder OutputPath
     FileSystem.CreateFolder OutputPath
     For Each DbObject In Database.QueryDefs
-        If Left(DbObject.Name, 1) <> "~" Then
+        If Not StrStartsWith(DbObject.Name, "~") Then
             AccessApp.SaveAsText acQuery, DbObject.Name, FileSystem.BuildPath(OutputPath, DbObject.Name)
         End If
     Next 
