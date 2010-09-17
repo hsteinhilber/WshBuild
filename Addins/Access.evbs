@@ -91,6 +91,8 @@ Class AccessAddin
     ExportPath = ExpandPath(ExportPath)
     If Not FileSystem.FolderExists(ExportPath) Then FileSystem.CreateFolder ExportPath
 
+    ExportUserInterfaceElements ExportPath
+
     If CheckFileExtension(FilePath, ".adp") Or CheckFileExtension(FilePath, ".ade") Then    
         ExtractAccessProjectObjects FilePath, ExportPath
     Else    
@@ -98,19 +100,25 @@ Class AccessAddin
     End If
   End Sub 
 
+  Private Sub ExportUserInterfaceElements(ByVal ExportPath)
+    Dim Project
+
+    Set Project = InnerApplication.CurrentProject
+    ExportAccessProjectObjects Project.AllForms, FileSystem.BuildPath(ExportPath, "Forms"), _
+      acForm, ".frm"
+    ExportAccessProjectObjects Project.AllReports, FileSystem.BuildPath(ExportPath, "Reports"), _
+      acReport, ".rpt"
+    ExportAccessProjectObjects Project.AllMacros, FileSystem.BuildPath(ExportPath, "Macros"), _
+      acMacro, ".mcr"
+    ExportAccessProjectObjects Project.AllModules, FileSystem.BuildPath(ExportPath, "Modules"), _
+      acModule, ".bas"
+  End Sub
+
   Private Sub ExtractAccessDatabaseObjects(ByVal DatabaseFileName, ByVal ExportPath)
     Dim Database, DbObject, OutputPath
     On Error Resume Next 
     
     Set Database = InnerApplication.CurrentDb 
-    
-    ExportAccessContainerDocuments Database.Containers, FileSystem.BuildPath(ExportPath, "Forms"), acForm
-    
-    ExportAccessContainerDocuments Database.Containers, FileSystem.BuildPath(ExportPath, "Reports"), acReport
-    
-    ExportAccessContainerDocuments Database.Containers, FileSystem.BuildPath(ExportPath, "Scripts"), acMacro
-    
-    ExportAccessContainerDocuments Database.Containers, FileSystem.BuildPath(ExportPath, "Modules"), acModule    
     
     WScript.Echo "Exporting Tables..."
     OutputPath = FileSystem.BuildPath(ExportPath, "Tables")
@@ -159,49 +167,20 @@ Class AccessAddin
     Set TextFile = Nothing 
   End Sub
 
-  Private Sub ExportAccessContainerDocuments(ByVal Containers, ByVal ExportPath, ByVal ObjectType)
-    Dim Current, DbObject 
-    
-    Current = FileSystem.GetBaseName(ExportPath)
-    WScript.Echo "Exporting " & Current & "..."
-    If FileSystem.FolderExists(ExportPath) Then FileSystem.DeleteFolder ExportPath
-    FileSystem.CreateFolder ExportPath
-    
-    For Each DbObject In Containers(Current).Documents
-        InnerApplication.SaveAsText ObjectType, DbObject.Name, FileSystem.BuildPath(ExportPath, DbObject.Name)
-    Next
-  End Sub
-
   Private Sub ExtractAccessProjectObjects(ByVal DatabaseFileName, ByVal ExportPath)
-    Dim Project
     On Error Resume Next
 
-    Set Project = InnerApplication.CurrentProject
-    
-    ExportAccessProjectObjects Project.AllForms, FileSystem.BuildPath(ExportPath, "Forms"), acForm
-    
-    ExportAccessProjectObjects Project.AllReports, FileSystem.BuildPath(ExportPath, "Reports"), acReport
-    
-    ExportAccessProjectObjects Project.AllMacros, FileSystem.BuildPath(ExportPath, "Macros"), acMacro
-    
-    ExportAccessProjectObjects Project.AllModules, FileSystem.BuildPath(ExportPath, "Modules"), acModule
-    
     WScript.Echo "Exporting Tables..."
-    Rem For Each td In db.TableDefs 'Tables
-        Rem If Left(td.Name, 4) <> "MSys" Then
-            Rem DoCmd.TransferText acExportDelim, , td.Name, ExportPath & "Table_" & td.Name & ".txt", True
-        Rem End If
-    Rem Next td
+    ' TODO: Find a nice way to export DDL for tables 
     
-    WScript.Echo "Exporting Queries..."
-    Rem For i = 0 To db.QueryDefs.Count - 1
-        Rem Application.SaveAsText acQuery, db.QueryDefs(i).Name, ExportPath & "Query_" & db.QueryDefs(i).Name & ".txt"
-    Rem Next i
-    
-    Set Project = Nothing
+    WScript.Echo "Exporting Views..."
+    ' TODO: Find a nice way to export DDL for views
+
+    WScript.Echo "Exporting Stored Procedures..."
+    ' TODO: Find a nice way to export DDL for stored procedures
   End Sub 
 
-  Private Sub ExportAccessProjectObjects(ByVal Objects, ByVal ExportPath, ByVal ObjectType)
+  Private Sub ExportAccessProjectObjects(ByVal Objects, ByVal ExportPath, ByVal ObjectType, ByVal Extension)
     Dim AccessObject 
     
     WScript.Echo "Exporting " & FileSystem.GetBaseName(ExportPath) & "..."
@@ -209,7 +188,7 @@ Class AccessAddin
     FileSystem.CreateFolder ExportPath
     
     For Each AccessObject In Objects
-        InnerApplication.SaveAsText ObjectType, AccessObject.Name, FileSystem.BuildPath(ExportPath, AccessObject.Name)
+        InnerApplication.SaveAsText ObjectType, AccessObject.Name, FileSystem.BuildPath(ExportPath, AccessObject.Name & Extension)
     Next
   End Sub 
 
