@@ -84,17 +84,17 @@ Class AccessAddin
     InnerApplication.CurrentProject.Properties.Add Name, Value
   End Property
 
-  Public Sub ExportAccessObjects(ByVal DatabaseFileName, ByVal ExportPath)
+  Public Sub ExportObjects(ByVal ExportPath)
     On Error Resume Next 
     
-    DatabaseFileName = ExpandPath(DatabaseFileName)
+    Dim FilePath: FilePath = InnerApplication.CurrentProject.FullName
     ExportPath = ExpandPath(ExportPath)
     If Not FileSystem.FolderExists(ExportPath) Then FileSystem.CreateFolder ExportPath
 
-    If CheckFileExtension(DatabaseFileName, ".adp") Or CheckFileExtension(DatabaseFileName, ".ade") Then    
-        ExtractAccessProjectObjects DatabaseFileName, ExportPath
+    If CheckFileExtension(FilePath, ".adp") Or CheckFileExtension(FilePath, ".ade") Then    
+        ExtractAccessProjectObjects FilePath, ExportPath
     Else    
-        ExtractAccessDatabaseObjects DatabaseFileName, ExportPath
+        ExtractAccessDatabaseObjects FilePath, ExportPath
     End If
   End Sub 
 
@@ -102,7 +102,6 @@ Class AccessAddin
     Dim Database, DbObject, OutputPath
     On Error Resume Next 
     
-    InnerApplication.OpenCurrentDatabase DatabaseFileName
     Set Database = InnerApplication.CurrentDb 
     
     ExportAccessContainerDocuments Database.Containers, FileSystem.BuildPath(ExportPath, "Forms"), acForm
@@ -137,8 +136,6 @@ Class AccessAddin
             InnerApplication.SaveAsText acQuery, DbObject.Name, FileSystem.BuildPath(OutputPath, DbObject.Name)
         End If
     Next 
-    
-    InnerApplication.CloseCurrentDatabase
   End Sub
 
   Private Sub ExportLinkedTable(ByVal DbObject, ByVal DatabasePath, ByVal OutputFilePath)
@@ -179,7 +176,6 @@ Class AccessAddin
     Dim Project
     On Error Resume Next
 
-    InnerApplication.OpenAccessProject DatabaseFileName
     Set Project = InnerApplication.CurrentProject
     
     ExportAccessProjectObjects Project.AllForms, FileSystem.BuildPath(ExportPath, "Forms"), acForm
