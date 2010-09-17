@@ -94,9 +94,9 @@ Class AccessAddin
     ExportUserInterfaceElements ExportPath
 
     If CheckFileExtension(FilePath, ".adp") Or CheckFileExtension(FilePath, ".ade") Then    
-        ExtractAccessProjectObjects FilePath, ExportPath
+        ExportAdpDataElements ExportPath
     Else    
-        ExtractAccessDatabaseObjects FilePath, ExportPath
+        ExportMdbDataElements ExportPath
     End If
   End Sub 
 
@@ -104,17 +104,17 @@ Class AccessAddin
     Dim Project
 
     Set Project = InnerApplication.CurrentProject
-    ExportAccessProjectObjects Project.AllForms, FileSystem.BuildPath(ExportPath, "Forms"), _
+    ExportProjectObjects Project.AllForms, FileSystem.BuildPath(ExportPath, "Forms"), _
       acForm, ".frm"
-    ExportAccessProjectObjects Project.AllReports, FileSystem.BuildPath(ExportPath, "Reports"), _
+    ExportProjectObjects Project.AllReports, FileSystem.BuildPath(ExportPath, "Reports"), _
       acReport, ".rpt"
-    ExportAccessProjectObjects Project.AllMacros, FileSystem.BuildPath(ExportPath, "Macros"), _
+    ExportProjectObjects Project.AllMacros, FileSystem.BuildPath(ExportPath, "Macros"), _
       acMacro, ".mcr"
-    ExportAccessProjectObjects Project.AllModules, FileSystem.BuildPath(ExportPath, "Modules"), _
+    ExportProjectObjects Project.AllModules, FileSystem.BuildPath(ExportPath, "Modules"), _
       acModule, ".bas"
   End Sub
 
-  Private Sub ExtractAccessDatabaseObjects(ByVal DatabaseFileName, ByVal ExportPath)
+  Private Sub ExportMdbDataElements(ByVal ExportPath)
     Dim Database, DbObject, OutputPath
     On Error Resume Next 
     
@@ -129,7 +129,7 @@ Class AccessAddin
             If Len(DbObject.Connect) = 0 Then
                 InnerApplication.ExportXML acTable, DbObject.Name, , FileSystem.BuildPath(OutputPath, DbObject.Name)
             Else
-                ExportLinkedTable  DbObject, FileSystem.GetParentFolderName(DatabaseFileName), _
+                ExportLinkedTable  DbObject, FileSystem.GetParentFolderName(Database.Name), _
                     FileSystem.BuildPath(OutputPath, DbObject.Name)
             End If
         End If
@@ -167,7 +167,7 @@ Class AccessAddin
     Set TextFile = Nothing 
   End Sub
 
-  Private Sub ExtractAccessProjectObjects(ByVal DatabaseFileName, ByVal ExportPath)
+  Private Sub ExportAdpDataElements(ByVal ExportPath)
     On Error Resume Next
 
     WScript.Echo "Exporting Tables..."
@@ -180,7 +180,7 @@ Class AccessAddin
     ' TODO: Find a nice way to export DDL for stored procedures
   End Sub 
 
-  Private Sub ExportAccessProjectObjects(ByVal Objects, ByVal ExportPath, ByVal ObjectType, ByVal Extension)
+  Private Sub ExportProjectObjects(ByVal Objects, ByVal ExportPath, ByVal ObjectType, ByVal Extension)
     Dim AccessObject 
     
     WScript.Echo "Exporting " & FileSystem.GetBaseName(ExportPath) & "..."
