@@ -91,6 +91,8 @@ Class AccessAddin
     ExportPath = ExpandPath(ExportPath)
     If Not FileSystem.FolderExists(ExportPath) Then FileSystem.CreateFolder ExportPath
 
+    ExportMetaData ExportPath
+
     ExportUserInterfaceElements ExportPath
 
     If CheckFileExtension(FilePath, ".adp") Or CheckFileExtension(FilePath, ".ade") Then    
@@ -99,6 +101,63 @@ Class AccessAddin
         ExportMdbDataElements ExportPath
     End If
   End Sub 
+
+  Private Sub ExportMetaData(ByVal ExportPath)
+    Dim XmlDocument: Set XmlDocument = CreateObject("Msxml2.DomDocument.6.0")
+    Dim FilePath: FilePath = FileSystem.BuildPath(ExportPath, "Project.xml")
+    Dim Project: Set Project = InnerApplication.CurrentProject
+
+    XmlDocument.documentElement = XmlDocument.createElement("database")
+    XmlDocument.documentElement.setAttribute "name", Project.Name
+    XmlDocument.documentElement.setAttribute "type", Project.ProjectType
+
+    Dim Parent, Child, Property
+    Set Parent = XmlDocument.createElement("properties")
+    XmlDocument.documentElement.appendChild Parent
+
+    For Each Property In Project.Properties
+      Set Child = XmlDocument.createElement("property")
+      Child.setAttribute "name", Property.Name
+      Child.setAttribute "value", Property.Value
+      Parent.appendChild Child
+    Next
+
+    WriteXmlDocument XmlDocument, FilePath
+    Set XmlDocument = Nothing
+  End Sub
+
+  Private Sub WriteXmlDocument(ByVal XmlDocument, ByVal FilePath)
+    Dim Reader, Writer, Stream
+
+    Set Stream = CreateObject("ADODB.Stream")
+    Set Writer = CreateObject("Msxml2.MXXMLWriter.6.0")
+    Set Reader = CreateObject("Msxml2.SAXXMLReader.6.0")
+
+    Stream.Open
+    Stream.Charset = "UTF-8"
+
+    Writer.encoding = "UTF-8"
+    Writer.indent = True
+    Writer.omitXMLDeclaration = False
+    Writer.output = Stream
+
+    Set Reader.contentHandler = Writer
+    Set Reader.dtdHandler = Writer
+    Set Reader.errorHandler = Writer
+
+    Reader.putProperty "http://xml.org/sax/properties/declaration-handler", Writer
+    Reader.putProperty "http://xml.org/sax/properties/lexical-handler", Writer
+
+    Reader.parse XmlDocument.XML
+    Writer.flush
+
+    Stream.SaveToFile FilePath, 2
+    Stream.Close
+
+    Set Reader = Nothing
+    Set Writer = Nothing
+    Set Stream = Nothing
+  End Sub
 
   Private Sub ExportUserInterfaceElements(ByVal ExportPath)
     Dim Project
@@ -129,7 +188,7 @@ Class AccessAddin
             If Len(DbObject.Connect) = 0 Then
                 InnerApplication.ExportXML acTable, DbObject.Name, , FileSystem.BuildPath(OutputPath, DbObject.Name)
             Else
-                ExportLinkedTable  DbObject, FileSystem.GetParentFolderName(Database.Name), _
+                ExportLinkedTable DbObject, FileSystem.GetParentFolderName(Database.Name), _
                     FileSystem.BuildPath(OutputPath, DbObject.Name)
             End If
         End If
