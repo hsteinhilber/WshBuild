@@ -30,6 +30,7 @@ Public Const acModule = 5
 Private Const acExportDelim = 2
 Private Const acStructureOnly = 0
 Private Const acAppendData = 2
+Private Const adSaveCreateOverWrite = 2
 
 Public Access ' InitializeAccessAddin dependency task will initialize this variable for use in tasks
 
@@ -194,7 +195,7 @@ Class AccessAddin
     Reader.parse XmlDocument.XML
     Writer.flush
 
-    Stream.SaveToFile FilePath, 2
+    Stream.SaveToFile FilePath, adSaveCreateOverWrite
     Stream.Close
 
     Set Reader = Nothing
