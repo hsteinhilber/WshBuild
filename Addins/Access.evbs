@@ -229,7 +229,7 @@ Class AccessAddin
     For Each DbObject In Database.TableDefs
         If Not StrStartsWith(DbObject.Name, "msys") And Not StrStartsWith(DbObject.Name, "~") Then
             If Not IsLinkedTable(DbObject) Then
-                InnerApplication.ExportXML acTable, DbObject.Name, , FileSystem.BuildPath(OutputPath, DbObject.Name)
+                InnerApplication.ExportXML acTable, DbObject.Name, , FileSystem.BuildPath(OutputPath, DbObject.Name & ".xsd")
             End If
         End If
     Next
