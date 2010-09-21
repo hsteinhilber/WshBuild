@@ -185,14 +185,16 @@ Class AccessAddin
     FileSystem.CreateFolder OutputPath
     For Each DbObject In Database.TableDefs
         If Not StrStartsWith(DbObject.Name, "msys") And Not StrStartsWith(DbObject.Name, "~") Then
-            If Len(DbObject.Connect) = 0 Then
+            If Not IsLinkedTable(DbObject) Then
                 InnerApplication.ExportXML acTable, DbObject.Name, , FileSystem.BuildPath(OutputPath, DbObject.Name)
-            Else
-                ExportLinkedTable DbObject, FileSystem.GetParentFolderName(Database.Name), _
-                    FileSystem.BuildPath(ExportPath, "Project.xml")
             End If
         End If
     Next
+
+    WScript.Echo "Exporting Linked Tables..."
+    OutputPath = FileSystem.BuildPath(ExportPath, "Project.xml")
+    ExportLinkedTables Database.TableDefs, _
+      FileSystem.GetParentFolderName(Database.Name), OutputPath
     
     WScript.Echo "Exporting Queries..."
     OutputPath = FileSystem.BuildPath(ExportPath, "Queries")
@@ -205,18 +207,10 @@ Class AccessAddin
     Next 
   End Sub
 
-  Private Sub ExportLinkedTable(ByVal DbObject, ByVal DatabasePath, ByVal OutputFilePath)
+  Private Sub ExportLinkedTables(ByVal Tables, ByVal DatabasePath, ByVal OutputFilePath)
     Dim XmlDocument, XmlLinkedTables, XmlLink
-    Dim LinkPath, LocalName, SourceName
-    
-    LocalName = DbObject.Name
-    SourceName = DbObject.SourceTableName
-    LinkPath = Mid(DbObject.Connect, 11)
-    If InStr(LinkPath, DatabasePath) = 1 Then 
-        LinkPath = Replace(LinkPath, DatabasePath, "")
-        LinkPath = FileSystem.BuildPath(".", LinkPath)
-    End If
-    
+    Dim Table, LinkPath, LocalName, SourceName
+
     Set XmlDocument = CreateObject("Msxml2.DomDocument.6.0")
     XmlDocument.load OutputFilePath
 
@@ -226,11 +220,23 @@ Class AccessAddin
       XmlDocument.documentElement.appendChild XmlLinkedTables
     End If
 
-    Set XmlLink = XmlDocument.createElement("link")
-    XmlLink.setAttribute "name", LocalName
-    XmlLink.setAttribute "source", SourceName
-    XmlLink.setAttribute "database", LinkPath
-    XmlLinkedTables.appendChild XmlLink
+    For Each Table In Tables
+      If IsLinkedTable(Table) Then
+        LocalName = Table.Name
+        SourceName = Table.SourceTableName
+        LinkPath = Mid(Table.Connect, 11)
+        If InStr(LinkPath, DatabasePath) = 1 Then 
+          LinkPath = Replace(LinkPath, DatabasePath, "")
+          LinkPath = FileSystem.BuildPath(".", LinkPath)
+        End If
+      
+        Set XmlLink = XmlDocument.createElement("link")
+        XmlLink.setAttribute "name", LocalName
+        XmlLink.setAttribute "source", SourceName
+        XmlLink.setAttribute "database", LinkPath
+        XmlLinkedTables.appendChild XmlLink
+      End If
+    Next
 
     WriteXmlDocument XmlDocument, OutputFilePath
     Set XmlLink = Nothing
@@ -266,6 +272,10 @@ Class AccessAddin
   Private Function CheckFileExtension(ByVal Path, ByVal Extension)
     CheckFileExtension = (LCase(FileSystem.GetExtensionName(Path)) = LCase(Extension))
   End Function
+
+  Private Function IsLinkedTable(ByVal Table)
+    IsLinkedTable = (Len(Table.Connect) > 0)
+  End Function 
 End Class
 
 Public Sub InitializeAccessAddin()
