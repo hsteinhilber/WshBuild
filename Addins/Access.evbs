@@ -102,6 +102,47 @@ Class AccessAddin
     End If
   End Sub 
 
+  Public Sub GenerateDatabase(ByVal SourcePath, ByVal DataPath, ByVal OutputPath)
+    On Error Resume Next
+
+    Dim XmlDocument: Set XmlDocument = CreateObject("Msxml2.DomDocument.6.0")
+    XmlDocument.load FileSystem.BuildPath(SourcePath, "Project.xml")
+
+    Dim FileName, FileType
+    FileType = XmlDocument.selectSingleNode("database/@type").nodeValue
+    FileName = XmlDocument.selectSingleNode("database/@name").nodeValue
+    FileName = FileSystem.BuildPath(OutputPath, FileName)
+
+    If FileSystem.FileExists(FileName) Then _
+        FileSystem.MoveFile FileName, FileName & "." & Timestamp & ".bak"
+
+    If FileType = "1" Then
+      ' InnerApplication.NewAccessProject FileName
+      ' ImportAdpDataElements XmlDocument, SourcePath, DataPath
+    ElseIf FileType = "2" Then
+      InnerApplication.NewCurrentDatabase FileName
+      ImportMdbDataElements XmlDocument, SourcePath, DataPath
+    End If
+
+    ' ImportDatabaseProperties XmlDocument
+
+    ' ImportUserInterfaceElements SourcePath
+
+    ' 5) For each property in Project.xml, add property to database
+    ' 6) For each link in Project.xml, add linked table to database
+    ' 7) For each file in "$(SourcePath)\Tables", ImportXML file to import schema
+    ' 8) For each file in "$(DataPath)", ImportXML file to import data
+    ' 9) For each module in "$(SourcePath)\Modules", Application.VBE.ActiveVBProject.VBComponents.Import file
+    ' 10) ** Unknown: Import Queries (Possibly modify to only export SQL and then create QueryDef and set SQL)
+    ' 11) ** Unknown: Import Forms
+    ' 12) ** Unknown: Import Reports
+    ' 13) ** Unknown: Import Macros
+    ' 14) Close database
+    
+    InnerApplication.CloseCurrentDatabase
+    Set XmlDocument = Nothing
+  End Sub
+
   Private Sub ExportMetaData(ByVal ExportPath)
     Dim XmlDocument: Set XmlDocument = CreateObject("Msxml2.DomDocument.6.0")
     Dim FilePath: FilePath = FileSystem.BuildPath(ExportPath, "Project.xml")
@@ -268,6 +309,15 @@ Class AccessAddin
         InnerApplication.SaveAsText ObjectType, AccessObject.Name, FileSystem.BuildPath(ExportPath, AccessObject.Name & Extension)
     Next
   End Sub 
+
+  Private Sub ImportMdbDataElements(ByVal XmlDocument, ByVal SourcePath, ByVal DataPath)
+    ' Import Linked Tables
+    
+    ' Import Regular Tables
+
+    ' Import Queries
+
+  End Sub
 
   Private Function CheckFileExtension(ByVal Path, ByVal Extension)
     CheckFileExtension = (LCase(FileSystem.GetExtensionName(Path)) = LCase(Extension))
