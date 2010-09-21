@@ -28,6 +28,8 @@ Public Const acMacro = 4
 Public Const acModule = 5
 
 Private Const acExportDelim = 2
+Private Const acStructureOnly = 0
+Private Const acAppendData = 2
 
 Public Access ' InitializeAccessAddin dependency task will initialize this variable for use in tasks
 
@@ -114,14 +116,14 @@ Class AccessAddin
     FileName = FileSystem.BuildPath(OutputPath, FileName)
 
     If FileSystem.FileExists(FileName) Then _
-        FileSystem.MoveFile FileName, FileName & "." & Timestamp & ".bak"
+        FileSystem.MoveFile FileName, FileName & "." & BackupTimestamp & ".bak"
 
     If FileType = "1" Then
       ' InnerApplication.NewAccessProject FileName
       ' ImportAdpDataElements XmlDocument, SourcePath, DataPath
     ElseIf FileType = "2" Then
       InnerApplication.NewCurrentDatabase FileName
-      ImportMdbDataElements XmlDocument, SourcePath, DataPath
+      ImportMdbDataElements XmlDocument, SourcePath, DataPath, OutputPath
     End If
 
     ' ImportDatabaseProperties XmlDocument
@@ -310,14 +312,42 @@ Class AccessAddin
     Next
   End Sub 
 
-  Private Sub ImportMdbDataElements(ByVal XmlDocument, ByVal SourcePath, ByVal DataPath)
-    ' Import Linked Tables
-    
-    ' Import Regular Tables
+  Private Sub ImportMdbDataElements(ByVal XmlDocument, ByVal SourcePath, ByVal DataPath, ByVal OutputPath)
+    Dim Database, DbObject
+    Set Database = InnerApplication.CurrentDb
 
+    ' Import Regular Tables
+    Dim File, TablesFolder
+    Set TablesFolder = FileSystem.GetFolder(FileSystem.BuildPath(SourcePath, "Tables"))
+    For Each File In TablesFolder.Files
+      InnerApplication.ImportXML File.Path, acStructureOnly
+    Next
+
+    ' Import Linked Tables
+    Dim LinkNode, TableName, SourceName, LinkPath
+    For Each LinkNode In XmlDocument.selectNodes("database/linked-tables/link")
+      TableName = LinkNode.selectSingleNode("@name").nodeValue
+      SourceName = LinkNode.selectSingleNode("@source").nodeValue
+      LinkPath = LinkNode.selectSingleNode("@database").nodeValue
+      If Not LinkPath = MapPath(LinkPath) Then ' This was not already an absolute path
+        LinkPath = MapPath(FileSystem.BuildPath(OutputPath, LinkPath))
+      End If
+      
+      Set DbObject = Database.CreateTableDef(TableName)
+      DbObject.SourceTableName = SourceName
+      DbObject.Connect = ";DATABASE=" & LinkPath
+      Database.TableDefs.Append DbObject
+    Next
+    Database.TableDefs.Refresh
+    
     ' Import Queries
 
   End Sub
+
+  Private Function BackupTimestamp()
+    BackupTimestamp = Year(Now) & Right(100 + Month(Now),2) & Right(100 + Day(Now),2) & _
+      Right(100 + Hour(Now),2) & Right(100 + Minute(Now),2) & Right(100 + Second(Now),2)
+  End Function
 
   Private Function CheckFileExtension(ByVal Path, ByVal Extension)
     CheckFileExtension = (LCase(FileSystem.GetExtensionName(Path)) = LCase(Extension))
