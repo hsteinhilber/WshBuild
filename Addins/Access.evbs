@@ -189,7 +189,7 @@ Class AccessAddin
                 InnerApplication.ExportXML acTable, DbObject.Name, , FileSystem.BuildPath(OutputPath, DbObject.Name)
             Else
                 ExportLinkedTable DbObject, FileSystem.GetParentFolderName(Database.Name), _
-                    FileSystem.BuildPath(OutputPath, DbObject.Name)
+                    FileSystem.BuildPath(ExportPath, "Project.xml")
             End If
         End If
     Next
@@ -206,7 +206,8 @@ Class AccessAddin
   End Sub
 
   Private Sub ExportLinkedTable(ByVal DbObject, ByVal DatabasePath, ByVal OutputFilePath)
-    Dim TextFile, LinkPath, LocalName, SourceName
+    Dim XmlDocument, XmlLinkedTables, XmlLink
+    Dim LinkPath, LocalName, SourceName
     
     LocalName = DbObject.Name
     SourceName = DbObject.SourceTableName
@@ -216,14 +217,25 @@ Class AccessAddin
         LinkPath = FileSystem.BuildPath(".", LinkPath)
     End If
     
-    Set TextFile = FileSystem.CreateTextFile(OutputFilePath, True)
-    TextFile.Write "<?xml version=""1.0""?>" & vbNewLine & _
-                   "<table name=""" & LocalName & """>" & vbNewLine & _
-                   "  <database>" & LinkPath & "</database>" & vbNewLine & _
-                   "  <source>" & SourceName & "</source>" & vbNewLine & _
-                   "</table>"
-    TextFile.Close
-    Set TextFile = Nothing 
+    Set XmlDocument = CreateObject("Msxml2.DomDocument.6.0")
+    XmlDocument.load OutputFilePath
+
+    Set XmlLinkedTables = XmlDocument.selectSingleNode("database/linked-tables")
+    If XmlLinkedTables Is Nothing Then 
+      Set XmlLinkedTables = XmlDocument.createElement("linked-tables")
+      XmlDocument.documentElement.appendChild XmlLinkedTables
+    End If
+
+    Set XmlLink = XmlDocument.createElement("link")
+    XmlLink.setAttribute "name", LocalName
+    XmlLink.setAttribute "source", SourceName
+    XmlLink.setAttribute "database", LinkPath
+    XmlLinkedTables.appendChild XmlLink
+
+    WriteXmlDocument XmlDocument, OutputFilePath
+    Set XmlLink = Nothing
+    Set XmlLinkedTables = Nothing
+    Set XmlDocument = Nothing
   End Sub
 
   Private Sub ExportAdpDataElements(ByVal ExportPath)
