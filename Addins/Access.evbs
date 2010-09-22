@@ -315,16 +315,16 @@ Class AccessAddin
 
   Private Sub ImportMdbDataElements(ByVal XmlDocument, ByVal SourcePath, ByVal DataPath, ByVal OutputPath)
     Dim Database, DbObject
+    Dim File, Folder
     Set Database = InnerApplication.CurrentDb
 
-    ' Import Regular Tables
-    Dim File, TablesFolder
-    Set TablesFolder = FileSystem.GetFolder(FileSystem.BuildPath(SourcePath, "Tables"))
-    For Each File In TablesFolder.Files
+    WScript.Echo "Generating Tables..."
+    Set Folder = FileSystem.GetFolder(FileSystem.BuildPath(SourcePath, "Tables"))
+    For Each File In Folder.Files
       InnerApplication.ImportXML File.Path, acStructureOnly
     Next
 
-    ' Import Linked Tables
+    WScript.Echo "Generating Linked Tables..."
     Dim LinkNode, TableName, SourceName, LinkPath
     For Each LinkNode In XmlDocument.selectNodes("database/linked-tables/link")
       TableName = LinkNode.selectSingleNode("@name").nodeValue
@@ -341,6 +341,15 @@ Class AccessAddin
     Next
     Database.TableDefs.Refresh
     
+    If FileSystem.FolderExists(DataPath) Then
+      WScript.Echo "Generating Data..."
+      Set Folder = FileSystem.GetFolder(DataPath)
+      For Each File In Folder.Files
+        InnerApplication.ImportXML File.Path, acAppendData
+      Next
+    End If
+
+    WScript.Echo "Generating Queries..."
     ' Import Queries
 
   End Sub
