@@ -240,6 +240,10 @@ Class AccessAddin
     ExportLinkedTables Database.TableDefs, _
       FileSystem.GetParentFolderName(Database.Name), OutputPath
     
+    WScript.Echo "Exporting Relationships..."
+    OutputPath = FileSystem.BuildPath(ExportPath, "Project.xml")
+    ExportRelationships Database.Relations, OutputPath
+    
     WScript.Echo "Exporting Queries..."
     OutputPath = FileSystem.BuildPath(ExportPath, "Queries")
     If FileSystem.FolderExists(OutputPath) Then FileSystem.DeleteFolder OutputPath
@@ -288,17 +292,60 @@ Class AccessAddin
     Set XmlDocument = Nothing
   End Sub
 
+  Private Sub ExportRelationships(ByVal Relations, ByVal OutputFilePath)
+    Dim XmlDocument, RelationshipsElement
+    
+    Set XmlDocument = CreateObject("Msxml2.DomDocument.6.0")
+    XmlDocument.Load OutputFilePath
+    
+    Set RelationshipsElement = XmlDocument.selectSingleNode("database/relationships")
+    If RelationshipsElement Is Nothing Then
+      Set RelationshipsElement = XmlDocument.createElement("relationships")
+      XmlDocument.documentElement.appendChild RelationshipsElement
+    End If
+    
+    Dim Relation
+    For Each Relation In Relations
+      Dim RelationElement: Set RelationElement = XmlDocument.createElement("relation")
+      RelationshipsElement.appendChild RelationElement
+      
+      RelationElement.setAttribute "name", Relation.Name
+      RelationElement.setAttribute "table", Relation.Table
+      RelationElement.setAttribute "foreign-table", Relation.ForeignTable
+      RelationElement.setAttribute "attributes", Relation.Attributes
+      
+      If Relation.Fields.Count > 0 Then
+        Dim FieldsElement: Set FieldsElement = XmlDocument.createElement("fields")
+        RelationElement.appendChild FieldsElement
+        
+        Dim Field, FieldElement
+        For Each Field In Relation.Fields
+          Set FieldElement = XmlDocument.createElement("field")
+          FieldsElement.appendChild FieldElement
+          
+          FieldElement.setAttribute "name", Field.Name
+          FieldElement.setAttribute "foreign-name", Field.ForeignName
+        Next
+      End If
+    Next
+    
+    WriteXmlDocument XmlDocument, OutputFilePath
+    Set XmlDocument = Nothing
+  End Sub
+
   Private Sub ExportAdpDataElements(ByVal ExportPath)
     On Error Resume Next
+    'TODO: Find a useful way of exporting SQL server objects
 
     WScript.Echo "Exporting Tables..."
-    ' TODO: Find a nice way to export DDL for tables 
     
+    WScript.Echo "Exporting Foreign Keys..."
+
+    WScript.Echo "Exporting Indices..."
+
     WScript.Echo "Exporting Views..."
-    ' TODO: Find a nice way to export DDL for views
 
     WScript.Echo "Exporting Stored Procedures..."
-    ' TODO: Find a nice way to export DDL for stored procedures
   End Sub 
 
   Private Sub ExportProjectObjects(ByVal Objects, ByVal ExportPath, ByVal ObjectType, ByVal Extension)
