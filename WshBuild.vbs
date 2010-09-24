@@ -92,7 +92,7 @@ Sub ImportAddinFiles()
 		WScript.Echo "Loading add-ins from " & Path
 		Set Folder = FileSystem.GetFolder(Path)
 		For Each File In Folder.Files
-			If FileSystem.GetExtensionName(File.Name) = "evbs" Then
+			If FileSystem.GetExtensionName(File.Name) = "vbs" Then
 				On Error Resume Next
 				WScript.Echo "Importing " & FileSystem.GetBaseName(File.Name) & " extensions"
 				Import File.Path
