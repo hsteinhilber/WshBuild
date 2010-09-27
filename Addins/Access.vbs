@@ -386,7 +386,7 @@ Class AccessAddin
     End If
 
     WScript.Echo "Generating Queries..."
-    ' Import Queries
+    ' 10) ** Unknown: Import Queries (Possibly modify to only export SQL and then create QueryDef and set SQL)
 
   End Sub
   
@@ -405,7 +405,6 @@ Class AccessAddin
   Private Sub ImportUserInterfaceElements(ByVal SourcePath)
     ImportModules FileSystem.BuildPath(SourcePath, Modules)
 
-    ' 10) ** Unknown: Import Queries (Possibly modify to only export SQL and then create QueryDef and set SQL)
     ' 11) ** Unknown: Import Forms
     ' 12) ** Unknown: Import Reports
     ' 13) ** Unknown: Import Macros
