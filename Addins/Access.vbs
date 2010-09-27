@@ -127,11 +127,10 @@ Class AccessAddin
       ImportMdbDataElements XmlDocument, SourcePath, DataPath, OutputPath
     End If
 
-    ' ImportDatabaseProperties XmlDocument
+    ImportProperties XmlDocument
 
     ' ImportUserInterfaceElements SourcePath
 
-    ' 5) For each property in Project.xml, add property to database
     ' 6) For each link in Project.xml, add linked table to database
     ' 7) For each file in "$(SourcePath)\Tables", ImportXML file to import schema
     ' 8) For each file in "$(DataPath)", ImportXML file to import data
@@ -399,6 +398,18 @@ Class AccessAddin
     WScript.Echo "Generating Queries..."
     ' Import Queries
 
+  End Sub
+  
+  Private Sub ImportProperties(ByVal XmlDocument)
+    Dim PropertiesElement, PropertyElement
+    Dim Name, Value
+
+    Set PropertiesElement = XmlDocument.selectSingleNode("database/properties")
+    For Each PropertyElement In PropertiesElement
+      Name = PropertyElement.selectSingleNode("@name").nodeValue
+      Value = PropertyElement.selectSingleNode("@value").nodeValue
+      InnerApplication.CurrentProject.Properties.Add Name, Value
+    Next
   End Sub
 
   Private Function BackupTimestamp()
