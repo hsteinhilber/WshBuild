@@ -129,18 +129,8 @@ Class AccessAddin
 
     ImportProperties XmlDocument
 
-    ' ImportUserInterfaceElements SourcePath
+    ImportUserInterfaceElements SourcePath
 
-    ' 6) For each link in Project.xml, add linked table to database
-    ' 7) For each file in "$(SourcePath)\Tables", ImportXML file to import schema
-    ' 8) For each file in "$(DataPath)", ImportXML file to import data
-    ' 9) For each module in "$(SourcePath)\Modules", Application.VBE.ActiveVBProject.VBComponents.Import file
-    ' 10) ** Unknown: Import Queries (Possibly modify to only export SQL and then create QueryDef and set SQL)
-    ' 11) ** Unknown: Import Forms
-    ' 12) ** Unknown: Import Reports
-    ' 13) ** Unknown: Import Macros
-    ' 14) Close database
-    
     InnerApplication.CloseCurrentDatabase
     Set XmlDocument = Nothing
   End Sub
@@ -409,6 +399,24 @@ Class AccessAddin
       Name = PropertyElement.selectSingleNode("@name").nodeValue
       Value = PropertyElement.selectSingleNode("@value").nodeValue
       InnerApplication.CurrentProject.Properties.Add Name, Value
+    Next
+  End Sub
+  
+  Private Sub ImportUserInterfaceElements(ByVal SourcePath)
+    ImportModules FileSystem.BuildPath(SourcePath, Modules)
+
+    ' 10) ** Unknown: Import Queries (Possibly modify to only export SQL and then create QueryDef and set SQL)
+    ' 11) ** Unknown: Import Forms
+    ' 12) ** Unknown: Import Reports
+    ' 13) ** Unknown: Import Macros
+  End Sub
+
+  Private Sub ImportModules(ByVal SourcePath)
+    Dim Folder, File
+
+    Set Folder = FileSystem.GetFolder(SourcePath)
+    For Each File in Folder.Files
+      InnerApplication.VBE.ActiveVBProject.VBComponents.Import File.Path
     Next
   End Sub
 
