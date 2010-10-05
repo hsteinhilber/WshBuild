@@ -92,7 +92,8 @@ Class AccessAddin
     
     Dim FilePath: FilePath = InnerApplication.CurrentProject.FullName
     ExportPath = MapPath(ExportPath)
-    If Not FileSystem.FolderExists(ExportPath) Then FileSystem.CreateFolder ExportPath
+    If FileSystem.FolderExists(ExportPath) Then FileSystem.DeleteFolder ExportPath
+    FileSystem.CreateFolder ExportPath
 
     ExportMetaData ExportPath
 
@@ -239,7 +240,10 @@ Class AccessAddin
     FileSystem.CreateFolder OutputPath
     For Each DbObject In Database.QueryDefs
         If Not StrStartsWith(DbObject.Name, "~") Then
-            InnerApplication.SaveAsText acQuery, DbObject.Name, FileSystem.BuildPath(OutputPath, DbObject.Name)
+          Dim TextStream: Set TextStream = FileSystem.CreateTextFile(_
+            FileSystem.BuildPath(OutputPath, DbObject.Name & ".sql"))
+          TextStream.Write DbObject.SQL
+          TextStream.Close: Set TextStream = Nothing
         End If
     Next 
   End Sub
@@ -386,8 +390,10 @@ Class AccessAddin
     End If
 
     WScript.Echo "Generating Queries..."
-    ' 10) ** Unknown: Import Queries (Possibly modify to only export SQL and then create QueryDef and set SQL)
-
+    Set Folder = FileSystem.GetFolder(FileSystem.BuildPath(SourcePath, "Queries"))
+    For Each File In Folder.Files
+      WScript.Echo "** DEBUG - IMPORTING " & UCase(File.Name) & " TO " & UCase(InnerApplication.CurrentDb.Name) & " **"
+    Next
   End Sub
   
   Private Sub ImportProperties(ByVal XmlDocument)
