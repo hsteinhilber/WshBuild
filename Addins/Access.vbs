@@ -395,7 +395,7 @@ Class AccessAddin
     Dim Name, Value
 
     Set PropertiesElement = XmlDocument.selectSingleNode("database/properties")
-    For Each PropertyElement In PropertiesElement
+    For Each PropertyElement In PropertiesElement.selectNodes("property")
       Name = PropertyElement.selectSingleNode("@name").nodeValue
       Value = PropertyElement.selectSingleNode("@value").nodeValue
       InnerApplication.CurrentProject.Properties.Add Name, Value
@@ -403,7 +403,7 @@ Class AccessAddin
   End Sub
   
   Private Sub ImportUserInterfaceElements(ByVal SourcePath)
-    ImportModules FileSystem.BuildPath(SourcePath, Modules)
+    ImportModules FileSystem.BuildPath(SourcePath, "Modules")
 
     ' 11) ** Unknown: Import Forms
     ' 12) ** Unknown: Import Reports
@@ -411,11 +411,13 @@ Class AccessAddin
   End Sub
 
   Private Sub ImportModules(ByVal SourcePath)
-    Dim Folder, File
+    Dim Folder, File, Component
 
     Set Folder = FileSystem.GetFolder(SourcePath)
     For Each File in Folder.Files
-      InnerApplication.VBE.ActiveVBProject.VBComponents.Import File.Path
+      Set Component = InnerApplication.VBE.ActiveVBProject.VBComponents.Import(File.Path)
+      Component.Name = FileSystem.GetBaseName(File.Name)
+      Application.DoCmd.Save acModule, Component.Name
     Next
   End Sub
 
