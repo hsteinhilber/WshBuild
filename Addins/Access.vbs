@@ -413,10 +413,10 @@ Class AccessAddin
   End Sub
   
   Private Sub ImportUserInterfaceElements(ByVal SourcePath)
+    ImportProjectObjects FileSystem.BuildPath(SourcePath, "Forms"), acForm
+    ImportProjectObjects FileSystem.BuildPath(SourcePath, "Reports"), acReport
+    ImportProjectObjects FileSystem.BuildPath(SourcePath, "Macros"), acMacro
     ImportProjectObjects FileSystem.BuildPath(SourcePath, "Modules"), acModule
-    ' 11) ** Unknown: Import Forms
-    ' 12) ** Unknown: Import Reports
-    ' 13) ** Unknown: Import Macros
   End Sub
 
   Private Function BackupTimestamp()
