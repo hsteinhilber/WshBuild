@@ -145,7 +145,15 @@ Class AccessAddin
     XmlDocument.documentElement.setAttribute "name", Project.Name
     XmlDocument.documentElement.setAttribute "type", Project.ProjectType
 
+    ExportProjectProperties XmlDocument, Project
+    
+    WriteXmlDocument XmlDocument, FilePath
+    Set XmlDocument = Nothing
+  End Sub
+
+  Private Sub ExportProjectProperties(ByVal XmlDocument, ByVal Project)
     Dim Parent, Child, Property
+
     Set Parent = XmlDocument.createElement("properties")
     XmlDocument.documentElement.appendChild Parent
 
@@ -155,9 +163,6 @@ Class AccessAddin
       Child.setAttribute "value", Property.Value
       Parent.appendChild Child
     Next
-
-    WriteXmlDocument XmlDocument, FilePath
-    Set XmlDocument = Nothing
   End Sub
 
   Private Sub WriteXmlDocument(ByVal XmlDocument, ByVal FilePath)
