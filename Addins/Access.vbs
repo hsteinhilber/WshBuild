@@ -240,7 +240,7 @@ Class AccessAddin
     FileSystem.CreateFolder OutputPath
     For Each DbObject In Database.QueryDefs
         If Not StrStartsWith(DbObject.Name, "~") Then
-            InnerApplication.SaveAsText acQuery, DbObject.Name, FileSystem.BuildPath(OutputPath, DbObject.Name)
+            InnerApplication.SaveAsText acQuery, DbObject.Name, FileSystem.BuildPath(OutputPath, DbObject.Name & ".qry")
         End If
     Next 
   End Sub
@@ -386,11 +386,20 @@ Class AccessAddin
       Next
     End If
 
-    WScript.Echo "Generating Queries..."
-    ' 10) ** Unknown: Import Queries (Possibly modify to only export SQL and then create QueryDef and set SQL)
-
+    ImportProjectObjects FileSystem.BuildPath(SourcePath, "Queries"), acQuery
   End Sub
   
+  Private Sub ImportProjectObjects(ByVal ImportPath, ByVal ObjectType)
+    Dim Folder, File, ObjectName
+    
+    WScript.Echo "Generating " & FileSystem.GetBaseName(ImportPath) & "..."
+    Set Folder = FileSystem.GetFolder(ImportPath)
+    For Each File In Folder.Files
+      ObjectName = FileSystem.GetBaseName(File.Name)
+        InnerApplication.LoadFromText ObjectType, ObjectName, File.Path
+    Next
+  End Sub 
+
   Private Sub ImportProperties(ByVal XmlDocument)
     Dim PropertiesElement, PropertyElement
     Dim Name, Value
