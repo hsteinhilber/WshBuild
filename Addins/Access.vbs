@@ -413,22 +413,10 @@ Class AccessAddin
   End Sub
   
   Private Sub ImportUserInterfaceElements(ByVal SourcePath)
-    ImportModules FileSystem.BuildPath(SourcePath, "Modules")
-
+    ImportProjectObjects FileSystem.BuildPath(SourcePath, "Modules"), acModule
     ' 11) ** Unknown: Import Forms
     ' 12) ** Unknown: Import Reports
     ' 13) ** Unknown: Import Macros
-  End Sub
-
-  Private Sub ImportModules(ByVal SourcePath)
-    Dim Folder, File, Component
-
-    Set Folder = FileSystem.GetFolder(SourcePath)
-    For Each File in Folder.Files
-      Set Component = InnerApplication.VBE.ActiveVBProject.VBComponents.Import(File.Path)
-      Component.Name = FileSystem.GetBaseName(File.Name)
-      Application.DoCmd.Save acModule, Component.Name
-    Next
   End Sub
 
   Private Function BackupTimestamp()
