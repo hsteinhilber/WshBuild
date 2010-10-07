@@ -31,6 +31,7 @@ Private Const acExportDelim = 2
 Private Const acStructureOnly = 0
 Private Const acAppendData = 2
 Private Const adSaveCreateOverWrite = 2
+Private Const dbText = 10
 
 Public Access ' InitializeAccessAddin dependency task will initialize this variable for use in tasks
 
@@ -128,9 +129,9 @@ Class AccessAddin
       ImportMdbDataElements XmlDocument, SourcePath, DataPath, OutputPath
     End If
 
-    ImportMetaData XmlDocument
-
     ImportUserInterfaceElements SourcePath
+
+    ImportMetaData XmlDocument
 
     InnerApplication.CloseCurrentDatabase
     Set XmlDocument = Nothing
@@ -227,7 +228,6 @@ Class AccessAddin
       ChildElement.appendChild XmlDocument.createTextNode(Description)
       ParentElement.appendChild ChildElement
     Next
-      
   End Sub
 
   Private Sub WriteXmlDocument(ByVal XmlDocument, ByVal FilePath)
@@ -473,6 +473,7 @@ Class AccessAddin
   Private Sub ImportMetaData(ByVal XmlDocument)
     ImportProperties XmlDocument
     ImportDatabaseProperties XmlDocument
+    ImportObjectDescriptions XmlDocument
   End Sub
 
   Private Sub ImportProperties(ByVal XmlDocument)
@@ -503,11 +504,54 @@ Class AccessAddin
         On Error Goto 0
         Dim Property: Set Property = Database.CreateProperty(Name, ValueType, Value)
         Database.Properties.Append Property
-        ElseIf Err <> 0 Then
+      ElseIf Err <> 0 Then
         On Error Goto 0
         Err.Raise Err.Number, Err.Source, Err.Description, Err.HelpFile, Err.HelpContext
       End If
     Next
+  End Sub
+
+  Private Sub ImportObjectDescriptions(ByVal XmlDocument)
+    Dim Database, Project
+
+    Set Database = InnerApplication.CurrentDb
+    Set Project = InnerApplication.CurrentProject
+
+    ' HACK: This is very hacking and needs major refactoring
+    If Database Is Nothing Then
+      ImportDescriptions Project.AllForms, XmlDocument.selectNodes("database/descriptions/forms/object"), "AddAccessObjectProperty"
+      ImportDescriptions Project.AllReports, XmlDocument.selectNodes("database/descriptions/reports/object"), "AddAccessObjectProperty"
+      ImportDescriptions Project.AllMacros, XmlDocument.selectNodes("database/descriptions/macros/object"), "AddAccessObjectProperty"
+      ImportDescriptions Project.AllModules, XmlDocument.selectNodes("database/descriptions/modules/object"), "AddAccessObjectProperty"
+    Else
+      ImportDescriptions Database.Containers("Forms").Documents, XmlDocument.selectNodes("database/descriptions/forms/object"), "AddContainerDocumentProperty"
+      ImportDescriptions Database.Containers("Reports").Documents, XmlDocument.selectNodes("database/descriptions/reports/object"), "AddContainerDocumentProperty"
+      ImportDescriptions Database.Containers("Scripts").Documents, XmlDocument.selectNodes("database/descriptions/macros/object"), "AddContainerDocumentProperty"
+      ImportDescriptions Database.Containers("Modules").Documents, XmlDocument.selectNodes("database/descriptions/modules/object"), "AddContainerDocumentProperty"
+    End If
+  End Sub
+
+  Private Sub ImportDescriptions(ByVal Collection, ByVal Objects, ByVal AddMethod)
+    Dim ObjectElement, Name, Description, AccessObject
+
+    For Each ObjectElement In Objects
+      Name = ObjectElement.selectSingleNode("@name").nodeValue
+      Description = ObjectElement.text
+      If Len(Description) > 0 Then
+        Set AccessObject = Collection(Name)
+        Execute AddMethod & " AccessObject, ""Description"", Description"
+      End If
+    Next
+  End Sub
+
+  Private Sub AddContainerDocumentProperty(ByVal Document, ByVal Name, ByVal Value)
+    Dim Property
+    Set Property = Document.CreateProperty(Name, dbText, Value)
+    Document.Properties.Append Property
+  End Sub
+
+  Private Sub AddAccessObjectProperty(ByVal AccessObject, ByVal Name, ByVal Value)
+    AccessObject.Properties.Add Name, Value
   End Sub
 
   Private Sub ImportUserInterfaceElements(ByVal SourcePath)
