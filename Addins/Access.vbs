@@ -196,6 +196,7 @@ Class AccessAddin
       ExportDescriptions XmlDocument, "macros", Project.AllMacros
       ExportDescriptions XmlDocument, "modules", Project.AllModules
     Else
+      ExportDescriptions XmlDocument, "tables", Database.Containers("Tables").Documents
       ExportDescriptions XmlDocument, "forms", Database.Containers("Forms").Documents
       ExportDescriptions XmlDocument, "reports", Database.Containers("Reports").Documents
       ExportDescriptions XmlDocument, "macros", Database.Containers("Scripts").Documents
@@ -223,6 +224,7 @@ Class AccessAddin
       Set ChildElement = XmlDocument.createElement("object")
       ChildElement.setAttribute "name", AccessObject.Name
       On Error Resume Next
+      Description = vbNullString
       Description = AccessObject.Properties("Description").Value
       On Error Goto 0
       ChildElement.appendChild XmlDocument.createTextNode(Description)
@@ -517,13 +519,14 @@ Class AccessAddin
     Set Database = InnerApplication.CurrentDb
     Set Project = InnerApplication.CurrentProject
 
-    ' HACK: This is very hacking and needs major refactoring
+    ' HACK: This is very hackish and needs major refactoring
     If Database Is Nothing Then
       ImportDescriptions Project.AllForms, XmlDocument.selectNodes("database/descriptions/forms/object"), "AddAccessObjectProperty"
       ImportDescriptions Project.AllReports, XmlDocument.selectNodes("database/descriptions/reports/object"), "AddAccessObjectProperty"
       ImportDescriptions Project.AllMacros, XmlDocument.selectNodes("database/descriptions/macros/object"), "AddAccessObjectProperty"
       ImportDescriptions Project.AllModules, XmlDocument.selectNodes("database/descriptions/modules/object"), "AddAccessObjectProperty"
     Else
+      ImportDescriptions Database.Containers("Tables").Documents, XmlDocument.selectNodes("database/descriptions/tables/object"), "AddContainerDocumentProperty"
       ImportDescriptions Database.Containers("Forms").Documents, XmlDocument.selectNodes("database/descriptions/forms/object"), "AddContainerDocumentProperty"
       ImportDescriptions Database.Containers("Reports").Documents, XmlDocument.selectNodes("database/descriptions/reports/object"), "AddContainerDocumentProperty"
       ImportDescriptions Database.Containers("Scripts").Documents, XmlDocument.selectNodes("database/descriptions/macros/object"), "AddContainerDocumentProperty"
@@ -545,9 +548,11 @@ Class AccessAddin
   End Sub
 
   Private Sub AddContainerDocumentProperty(ByVal Document, ByVal Name, ByVal Value)
+    On Error Resume Next
     Dim Property
     Set Property = Document.CreateProperty(Name, dbText, Value)
     Document.Properties.Append Property
+    If Err = 3367 Then Document.Properties(Name).Value = Value: Err.Clear
   End Sub
 
   Private Sub AddAccessObjectProperty(ByVal AccessObject, ByVal Name, ByVal Value)
