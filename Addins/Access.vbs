@@ -146,6 +146,7 @@ Class AccessAddin
     XmlDocument.documentElement.setAttribute "type", Project.ProjectType
 
     ExportProjectProperties XmlDocument, Project
+    ExportDatabaseProperties XmlDocument, InnerApplication.CurrentDb
     
     WriteXmlDocument XmlDocument, FilePath
     Set XmlDocument = Nothing
@@ -162,6 +163,27 @@ Class AccessAddin
       Child.setAttribute "name", Property.Name
       Child.setAttribute "value", Property.Value
       Parent.appendChild Child
+    Next
+  End Sub
+
+  Private Sub ExportDatabaseProperties(ByVal XmlDocument, ByVal Database)
+    Dim Parent, Child, Property, ExcludeProperties
+    If Database Is Nothing Then Exit Sub
+
+    ExcludeProperties = Array("Name", "Transactions", "Updatable", "CollatingOrder", _
+      "Version", "RecordsAffected", "ReplicaID", "DesignMasterID", "Connection", _
+      "ProjVer", "Build", "AccessVersion", "Connect")
+    Set Parent = XmlDocument.createElement("db-properties")
+    XmlDocument.documentElement.appendChild Parent
+
+    For Each Property In Database.Properties
+      If Not Contains(ExcludeProperties, Property.Name) Then
+        Set Child = XmlDocument.createElement("property")
+        Child.setAttribute "name", Property.Name
+        Child.setAttribute "value", Property.Value
+        Child.setAttribute "type", Property.Type
+        Parent.appendChild Child
+      End If
     Next
   End Sub
 
@@ -423,6 +445,11 @@ Class AccessAddin
     ImportProjectObjects FileSystem.BuildPath(SourcePath, "Macros"), acMacro
     ImportProjectObjects FileSystem.BuildPath(SourcePath, "Modules"), acModule
   End Sub
+
+  Public Function Contains(ByRef Values, ByVal Search)
+    Contains = InStr(vbNullChar & Join(Values, vbNullChar) & vbNullChar, _
+        vbNullChar & Search & vbNullChar) > 0
+  End Function
 
   Private Function BackupTimestamp()
     BackupTimestamp = Year(Now) & Right(100 + Month(Now),2) & Right(100 + Day(Now),2) & _
