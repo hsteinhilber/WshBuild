@@ -128,7 +128,7 @@ Class AccessAddin
       ImportMdbDataElements XmlDocument, SourcePath, DataPath, OutputPath
     End If
 
-    ImportProperties XmlDocument
+    ImportMetaData XmlDocument
 
     ImportUserInterfaceElements SourcePath
 
@@ -427,6 +427,11 @@ Class AccessAddin
     Next
   End Sub 
 
+  Private Sub ImportMetaData(ByVal XmlDocument)
+    ImportProperties XmlDocument
+    ImportDatabaseProperties XmlDocument
+  End Sub
+
   Private Sub ImportProperties(ByVal XmlDocument)
     Dim PropertiesElement, PropertyElement
     Dim Name, Value
@@ -439,6 +444,29 @@ Class AccessAddin
     Next
   End Sub
   
+  Private Sub ImportDatabaseProperties(ByVal XmlDocument)
+    Dim PropertiesElement, PropertyElement
+    Dim Name, Value, ValueType, Database
+
+    Set Database = Application.CurrentDb
+    Set PropertiesElement = XmlDocument.selectSingleNode("database/db-properties")
+    For Each PropertyElement In PropertiesElement.selectNodes("property")
+      Name = PropertyElement.selectSingleNode("@name").nodeValue
+      Value = PropertyElement.selectSingleNode("@value").nodeValue
+      ValueType = CInt(PropertyElement.selectSingleNode("@type").nodeValue)
+      On Error Resume Next 
+      Database.Properties(Name).Value = Value
+      If Err = 3270 Then
+        On Error Goto 0
+        Dim Property: Set Property = Database.CreateProperty(Name, ValueType, Value)
+        Database.Properties.Append Property
+        ElseIf Err <> 0 Then
+        On Error Goto 0
+        Err.Raise Err.Number, Err.Source, Err.Description, Err.HelpFile, Err.HelpContext
+      End If
+    Next
+  End Sub
+
   Private Sub ImportUserInterfaceElements(ByVal SourcePath)
     ImportProjectObjects FileSystem.BuildPath(SourcePath, "Forms"), acForm
     ImportProjectObjects FileSystem.BuildPath(SourcePath, "Reports"), acReport
