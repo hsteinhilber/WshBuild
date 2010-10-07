@@ -147,6 +147,7 @@ Class AccessAddin
 
     ExportProjectProperties XmlDocument, Project
     ExportDatabaseProperties XmlDocument, InnerApplication.CurrentDb
+    ExportObjectDescriptions XmlDocument, Project, InnerApplication.CurrentDb
     
     WriteXmlDocument XmlDocument, FilePath
     Set XmlDocument = Nothing
@@ -185,6 +186,48 @@ Class AccessAddin
         Parent.appendChild Child
       End If
     Next
+  End Sub
+
+  Private Sub ExportObjectDescriptions(ByVal XmlDocument, ByVal Project, ByVal Database)
+    If Database Is Nothing Then
+      ExportDescriptions XmlDocument, "forms", Project.AllForms
+      ExportDescriptions XmlDocument, "reports", Project.AllReports
+      ExportDescriptions XmlDocument, "macros", Project.AllMacros
+      ExportDescriptions XmlDocument, "modules", Project.AllModules
+    Else
+      ExportDescriptions XmlDocument, "forms", Database.Containers("Forms").Documents
+      ExportDescriptions XmlDocument, "reports", Database.Containers("Reports").Documents
+      ExportDescriptions XmlDocument, "macros", Database.Containers("Scripts").Documents
+      ExportDescriptions XmlDocument, "modules", Database.Containers("Modules").Documents
+    End If
+  End Sub
+
+  Private Sub ExportDescriptions(ByVal XmlDocument, ByVal Parent, ByVal Collection)
+    Dim DescriptionsElement, ParentElement, ChildElement
+    Dim AccessObject, Description
+
+    Set DescriptionsElement = XmlDocument.selectSingleNode("database/descriptions")
+    If DescriptionsElement Is Nothing Then 
+      Set DescriptionsElement = XmlDocument.createElement("descriptions")
+      XmlDocument.documentElement.appendChild DescriptionsElement
+    End If
+
+    Set ParentElement = DescriptionsElement.selectSingleNode(Parent)
+    If ParentElement Is Nothing Then
+      Set ParentElement = XmlDocument.createElement(Parent)
+      DescriptionsElement.appendChild ParentElement
+    End If
+
+    For Each AccessObject In Collection
+      Set ChildElement = XmlDocument.createElement("object")
+      ChildElement.setAttribute "name", AccessObject.Name
+      On Error Resume Next
+      Description = AccessObject.Properties("Description").Value
+      On Error Goto 0
+      ChildElement.appendChild XmlDocument.createTextNode(Description)
+      ParentElement.appendChild ChildElement
+    Next
+      
   End Sub
 
   Private Sub WriteXmlDocument(ByVal XmlDocument, ByVal FilePath)
