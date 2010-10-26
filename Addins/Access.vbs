@@ -458,6 +458,8 @@ Class AccessAddin
       Next
     End If
 
+	ImportRelationships XmlDocument
+	
     ImportProjectObjects FileSystem.BuildPath(SourcePath, "Queries"), acQuery
   End Sub
   
@@ -544,6 +546,36 @@ Class AccessAddin
         Set AccessObject = Collection(Name)
         Execute AddMethod & " AccessObject, ""Description"", Description"
       End If
+    Next
+  End Sub
+  
+  Private Sub ImportRelationships(ByVal XmlDocument)
+    Dim RelationshipsElement, Database
+    
+	WScript.Echo "Generating Relationships..."
+    Set RelationshipsElement = XmlDocument.selectSingleNode("database/relationships")
+	Set Database = InnerApplication.CurrentDb
+   
+    Dim RelationElement
+    For Each RelationElement In RelationshipsElement.childNodes
+	  Dim Name, Table, ForeignTable, Attributes, Relation
+	  Name = RelationElement.selectSingleNode("@name").nodeValue
+	  Table = RelationElement.selectSingleNode("@table").nodeValue
+	  ForeignTable = RelationElement.selectSingleNode("@foreign-table").nodeValue
+	  Attributes = RelationElement.selectSingleNode("@attributes").nodeValue	  
+      Set Relation = Database.CreateRelation(Name, Table, ForeignTable, Attributes)
+	  
+	  Dim FieldElement
+	  For Each FieldElement In RelationElement.selectNodes("fields/field")
+        Dim FieldName, ForeignName, Field
+		FieldName = FieldElement.selectSingleNode("@name").nodeValue
+		ForeignName = FieldElement.selectSingleNode("@foreign-name").nodeValue
+		Set Field = Relation.CreateField(FieldName)
+		Field.ForeignName = ForeignName
+		Relation.Fields.Append Field
+	  Next
+	  
+	  Database.Relations.Append Relation
     Next
   End Sub
 
